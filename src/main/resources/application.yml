@@ -7,10 +7,6 @@ config:
 
 server:
   port: 8080
-  servlet:
-    context-path: /
-  tomcat:
-    uri-encoding: UTF-8
   ssl:
     enabled: true
     key-store: classpath:keystore.jks

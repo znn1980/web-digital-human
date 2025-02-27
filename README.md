@@ -16,7 +16,7 @@
 [短文本在线合成API](https://ai.baidu.com/ai-doc/SPEECH/mlbxh7xie)  
 [流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)
 
-## 文心大模型
+## 千帆大模型
 
-[千帆大模型](https://cloud.baidu.com/doc/WENXINWORKSHOP/index.html)  
-[对话Chat](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/xlmokikxe)
+[对话Chat](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/om5aq2brc)
+[对话Chat V2](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/em4tsqo3v)
