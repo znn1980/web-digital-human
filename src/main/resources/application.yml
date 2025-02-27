@@ -1,0 +1,17 @@
+config:
+  baidu:
+    app-key:
+    app-secret-key:
+    access-key:
+    access-secret-key:
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  tomcat:
+    uri-encoding: UTF-8
+  ssl:
+    enabled: true
+    key-store: classpath:keystore.jks
+    key-store-password: 123456
