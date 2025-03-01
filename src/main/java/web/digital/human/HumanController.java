@@ -4,24 +4,28 @@ import com.baidubce.qianfan.Qianfan;
 import com.baidubce.qianfan.QianfanV2;
 import com.baidubce.qianfan.core.StreamIterator;
 import com.baidubce.qianfan.model.chat.v2.request.RequestV2;
+import com.baidubce.qianfan.model.chat.v2.response.ResponseV2;
 import com.baidubce.qianfan.model.chat.v2.response.StreamResponseV2;
 import com.google.gson.Gson;
-import okhttp3.*;
-import okio.BufferedSink;
-import okio.BufferedSource;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import okio.ByteString;
 import okio.Okio;
+import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Base64;
 
 @Controller
 public class HumanController {
@@ -39,62 +43,54 @@ public class HumanController {
         this.httpClient = httpClient;
     }
 
-    @GetMapping("/api/credentials")
-    public void credentials(HttpServletResponse response) throws IOException {
+    @GetMapping(value = "/api/credentials", produces = MediaType.TEXT_PLAIN_VALUE)
+    @ResponseBody
+    public String credentials() throws IOException {
         this.refreshCredentials();
-        response.setHeader("Content-Type", "text/plain;charset=UTF-8");
-        try (BufferedSink sink = Okio.buffer(Okio.sink(response.getOutputStream()))) {
-            sink.writeUtf8(this.credentials.getAccessToken());
-        }
+        return this.credentials.getAccessToken();
     }
 
-    @PostMapping("/api/speech/recognitions")
-    public void speechRecognitions(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    @PostMapping(value = "/api/speech/recognitions", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public String speechRecognitions(@RequestBody byte[] vop) throws IOException {
         this.refreshCredentials();
-        try (BufferedSource source = Okio.buffer(Okio.source(request.getInputStream()))) {
-            try (Response vop = this.httpClient.newCall(new Request.Builder()
-                    .header("format", "pcm")
-                    .header("rate", "16000")
-                    .post(RequestBody.create(MediaType.parse("audio/pcm;rate=16000")
-                            , Base64.getDecoder().decode(source.readByteString().toByteArray())))
-                    .url(String.format("https://vop.baidu.com/pro_api?token=%s&cuid=SC1234567890&dev_pid=80001"
-                            , this.credentials.getAccessToken()))
-                    .build()).execute()) {
-                ByteString byteString = ByteString.of(vop.body().bytes());
-                LOGGER.info("ASR：{}", byteString.utf8());
-                response.setHeader("Content-Type", "application/json;charset=UTF-8");
-                try (BufferedSink sink = Okio.buffer(Okio.sink(response.getOutputStream()))) {
-                    sink.write(byteString);
-                }
-            }
+        try (Response response = this.httpClient.newCall(new Request.Builder()
+                .header("format", "pcm").header("rate", "16000")
+                .post(okhttp3.RequestBody.create(okhttp3.MediaType.parse("audio/pcm;rate=16000")
+                        , Base64.decodeBase64(vop)))
+                .url(String.format("https://vop.baidu.com/pro_api?token=%s&cuid=SC1234567890&dev_pid=80001"
+                        , this.credentials.getAccessToken()))
+                .build()).execute()) {
+            ByteString byteString = ByteString.of(response.body().bytes());
+            LOGGER.info("ASR：{}", byteString.utf8());
+            return byteString.utf8();
         }
     }
 
     @PostMapping("/api/chat/completions")
-    public void chatCompletions(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        try (BufferedSource source = Okio.buffer(Okio.source(request.getInputStream()))) {
-            ByteString byteString = source.readByteString();
-            LOGGER.info("问：{}", byteString.utf8());
-            RequestV2 v2 = this.gson.fromJson(byteString.utf8(), RequestV2.class);
-            try (BufferedSink sink = Okio.buffer(Okio.sink(response.getOutputStream()))) {
-                if (v2.isStream()) {
-                    response.setHeader("Content-Type", "text/event-stream;charset=UTF-8");
-                    try (StreamIterator<StreamResponseV2> streams = client.chatCompletionStream(v2)) {
-                        while (streams.hasNext()) {
-                            StreamResponseV2 stream = streams.next();
-                            if (stream != null) {
-                                LOGGER.info("答：{}", this.gson.toJson(stream));
-                                sink.writeUtf8(this.gson.toJson(stream)).writeUtf8("\n\n").flush();
-                            }
-                        }
+    public ResponseEntity<StreamingResponseBody> chatCompletions(@RequestBody RequestV2 request) {
+        LOGGER.info("问：{}", this.gson.toJson(request));
+        if (request.isStream()) {
+            StreamIterator<StreamResponseV2> response = this.client.chatCompletionStream(request);
+            return ResponseEntity.ok().contentType(MediaType.TEXT_EVENT_STREAM).body(os -> {
+                while (response.hasNext()) {
+                    StreamResponseV2 stream = response.next();
+                    if (stream == null) {
+                        continue;
                     }
-                } else {
-                    response.setHeader("Content-Type", "application/json;charset=UTF-8");
-                    byteString = ByteString.encodeUtf8(this.gson.toJson(client.chatCompletion(v2)));
+                    ByteString byteString = ByteString.encodeUtf8(this.gson.toJson(stream));
                     LOGGER.info("答：{}", byteString.utf8());
-                    sink.write(byteString);
+                    Okio.buffer(Okio.sink(os)).write(byteString)
+                            .writeUtf8("\r\n").writeUtf8("\r\n").flush();
                 }
-            }
+                response.close();
+            });
+        } else {
+            ResponseV2 response = this.client.chatCompletion(request);
+            ByteString byteString = ByteString.encodeUtf8(this.gson.toJson(response));
+            LOGGER.info("答：{}", byteString.utf8());
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(os ->
+                    Okio.buffer(Okio.sink(os)).write(byteString));
         }
     }
 

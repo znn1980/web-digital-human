@@ -150,6 +150,7 @@ layui.define(function (exports) {
                 $human.request.messages.push({role: 'user', content: text});
                 console.log($human.request);
                 fetch('api/chat/completions', {
+                    headers: {'Content-Type': 'application/json'},
                     method: 'POST', body: JSON.stringify($human.request)
                 }).then(function (response) {
                     if (response.ok) {
