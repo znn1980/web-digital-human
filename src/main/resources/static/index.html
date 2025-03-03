@@ -141,9 +141,9 @@
             if (audioPlayer.isPlaying) {
                 layui.layer.msg('正在播放，请先暂停！');
             } else {
-                layui.human.qa('你好，我是小川，有什么可以帮到你的吗？', '');
+                layui.human.qa(`你好，我是${layui.human.me.title}。我可以如何帮到你？`, '');
                 layui.tts.init(audioPlayer, function () {
-                    layui.tts.send('你好，我是小川，有什么可以帮到你的吗？');
+                    layui.tts.send(`你好，我是${layui.human.me.title}。我可以如何帮到你？`);
                     layui.tts.finish();
                 });
             }
