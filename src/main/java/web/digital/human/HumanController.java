@@ -29,6 +29,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 @Controller
 public class HumanController {
@@ -89,9 +90,9 @@ public class HumanController {
                         }
                         String json = this.gson.toJson(response);
                         LOGGER.info("答：{}", json);
-                        StreamUtils.copy(("data:" + json + "\n\n").getBytes(), os);
+                        StreamUtils.copy("data:" + json + "\n\n", StandardCharsets.UTF_8, os);
                     }
-                    StreamUtils.copy(("[DONE]\n\n").getBytes(), os);
+                    StreamUtils.copy("[DONE]\n\n", StandardCharsets.UTF_8, os);
                 } finally {
                     stream.close();
                 }
@@ -101,7 +102,7 @@ public class HumanController {
             String json = this.gson.toJson(response);
             LOGGER.info("答：{}", json);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(os ->
-                    StreamUtils.copy(json.getBytes(), os));
+                    StreamUtils.copy(json, StandardCharsets.UTF_8, os));
         }
     }
 

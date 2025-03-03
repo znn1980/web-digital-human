@@ -189,12 +189,7 @@
                     });
                 }
                 layui.$('#text').val('');
-                layui.$('#release').css('color', 'grey');
             }
-        });
-        layui.$('#release').css('color', 'grey');
-        layui.$('#text').on('input', function () {
-            layui.$('#release').css('color', layui.$(this).val() === '' ? 'grey' : 'blue');
         });
 
         layui.$('#pause').on('click', function () {
