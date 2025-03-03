@@ -8,14 +8,11 @@ import com.baidubce.qianfan.model.chat.v2.response.ResponseV2;
 import com.baidubce.qianfan.model.chat.v2.response.StreamResponseV2;
 import com.google.gson.Gson;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.EntityBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.hc.core5.http.io.entity.HttpEntities;
+import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +28,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 
 @Controller
 public class HumanController {
@@ -52,7 +50,7 @@ public class HumanController {
 
     @GetMapping(value = "/api/credentials", produces = MediaType.TEXT_PLAIN_VALUE)
     @ResponseBody
-    public String credentials() throws IOException, ParseException {
+    public String credentials() throws IOException {
         this.refreshCredentials();
         return this.credentials.getAccessToken();
     }
@@ -60,38 +58,42 @@ public class HumanController {
 
     @PostMapping(value = "/api/speech/recognitions", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public String speechRecognitions(@RequestBody byte[] vop) throws IOException, ParseException {
+    public String speechRecognitions(@RequestBody String vop) throws IOException {
         this.refreshCredentials();
-        HttpPost httpPost = new HttpPost(String.format(ASR_URL, this.credentials.getAccessToken()));
-        httpPost.addHeader("format", "pcm");
-        httpPost.addHeader("rate", "16000");
-        httpPost.setEntity(HttpEntities.create(Base64.decodeBase64(vop)
-                , ContentType.create("audio/pcm", new BasicNameValuePair("rate", "16000"))));
-        try (CloseableHttpResponse response = this.httpClient.execute(httpPost)) {
+        return this.httpClient.execute(ClassicRequestBuilder
+                .post(String.format(ASR_URL, this.credentials.getAccessToken()))
+                .addHeader("format", "pcm")
+                .addHeader("rate", "16000")
+                .setEntity(EntityBuilder.create()
+                        .setContentType(ContentType.create("audio/pcm"
+                                , new BasicNameValuePair("rate", "16000")))
+                        .setBinary(Base64.decodeBase64(URLDecoder.decode(vop, "UTF-8"))).build())
+                .build(), response -> {
             String json = EntityUtils.toString(response.getEntity());
             LOGGER.info("ASR：{}", json);
             return json;
-        }
+        });
     }
 
     @PostMapping("/api/chat/completions")
     public ResponseEntity<StreamingResponseBody> chatCompletions(@RequestBody RequestV2 request) {
         LOGGER.info("问：{}", this.gson.toJson(request));
         if (request.isStream()) {
-            StreamIterator<StreamResponseV2> response = this.client.chatCompletionStream(request);
+            StreamIterator<StreamResponseV2> stream = this.client.chatCompletionStream(request);
             return ResponseEntity.ok().contentType(MediaType.TEXT_EVENT_STREAM).body(os -> {
                 try {
-                    while (response.hasNext()) {
-                        StreamResponseV2 stream = response.next();
-                        if (stream == null) {
+                    while (stream.hasNext()) {
+                        StreamResponseV2 response = stream.next();
+                        if (response == null) {
                             break;
                         }
-                        String json = this.gson.toJson(stream);
+                        String json = this.gson.toJson(response);
                         LOGGER.info("答：{}", json);
-                        StreamUtils.copy((json + "\r\n\r\n").getBytes(), os);
+                        StreamUtils.copy(("data:" + json + "\n\n").getBytes(), os);
                     }
+                    StreamUtils.copy(("[DONE]\n\n").getBytes(), os);
                 } finally {
-                    response.close();
+                    stream.close();
                 }
             });
         } else {
@@ -103,19 +105,19 @@ public class HumanController {
         }
     }
 
-    void refreshCredentials() throws IOException, ParseException {
+    void refreshCredentials() throws IOException {
         if (!StringUtils.hasText(this.credentials.getAccessToken())
                 || this.credentials.getExpiresIn() < System.currentTimeMillis()) {
-            HttpGet httpGet = new HttpGet(String.format(TOKEN_URL, config.getBaidu().getAppKey(), config.getBaidu().getAppSecretKey()));
-            try (CloseableHttpResponse response = this.httpClient.execute(httpGet)) {
+            Credentials credentials = this.httpClient.execute(ClassicRequestBuilder
+                    .get(String.format(TOKEN_URL, config.getBaidu().getAppKey(), config.getBaidu().getAppSecretKey())).build(), response -> {
                 String json = EntityUtils.toString(response.getEntity());
                 LOGGER.info("TOKEN：{}", json);
-                Credentials credentials = this.gson.fromJson(json, Credentials.class);
-                this.credentials.setError(credentials.getError());
-                this.credentials.setErrorDescription(credentials.getErrorDescription());
-                this.credentials.setAccessToken(credentials.getAccessToken());
-                this.credentials.setExpiresIn(System.currentTimeMillis() + credentials.getExpiresIn() * 1000);
-            }
+                return this.gson.fromJson(json, Credentials.class);
+            });
+            this.credentials.setError(credentials.getError());
+            this.credentials.setErrorDescription(credentials.getErrorDescription());
+            this.credentials.setAccessToken(credentials.getAccessToken());
+            this.credentials.setExpiresIn(System.currentTimeMillis() + credentials.getExpiresIn() * 1000);
         }
     }
 

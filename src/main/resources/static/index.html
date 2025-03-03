@@ -154,8 +154,8 @@
                 layui.layer.msg('正在播放，请先暂停！');
             } else {
                 Recorder.getPermission().then(() => {
-                    layui.human.mike(audioRecorder, 30, function (base64) {
-                        layui.human.asr(base64, function (text) {
+                    layui.human.mike(audioRecorder, 30, function (blob) {
+                        layui.human.asr(blob, function (text) {
                             if (text && text !== '') {
                                 layui.$('#text').val(text);
                                 layui.$('#release').trigger('click');

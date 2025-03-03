@@ -152,37 +152,45 @@ layui.define(function (exports) {
                 fetch('api/chat/completions', {
                     headers: {'Content-Type': 'application/json'},
                     method: 'POST', body: JSON.stringify($human.request)
-                }).then(function (response) {
-                    if (response.ok) {
-                        return response.body;
-                    } else {
+                }).then(response => {
+                    if (!response.ok) {
                         throw new Error(response.status + '-' + response.statusText);
                     }
-                }).then(function (data) {
+                    return response.body;
+                }).then(data => {
                     $human.response.messages = [];
                     $human.stream(data.getReader(), callback);
-                }).catch(function (e) {
+                }).catch(error => {
                     typeof callback === 'function' && callback(true, null);
                     $human.request.messages.pop();
-                    layui.layer.msg('发送数据失败！（' + e + '）');
+                    layui.layer.msg('发送数据失败！（' + error + '）');
                 });
             });
         },
         stream: function (reader, callback) {
-            return reader.read().then(function ({done, value}) {
-                console.log(done);
+            const decoder = new TextDecoder('UTF-8');
+            return reader.read().then(({done, value}) => {
+                const result = decoder.decode(value, {stream: true});
+                console.log(done, result);
                 if (done) {
                     const message = $human.response.messages.join('');
                     if (message !== '') {
                         $human.request.messages.push({role: 'assistant', content: message});
                     }
                 } else {
-                    const data = new TextDecoder().decode(value);
-                    console.log(data);
-                    const content = JSON.parse(data).choices[0].delta.content || '';
-                    console.log(content);
-                    layui.tts.send(content);
-                    $human.response.messages.push(content);
+                    result.split('\n').forEach(line => {
+                        if (line && line.startsWith('data:')) {
+                            const data = JSON.parse(line.substring('data:'.length));
+                            console.log(data);
+                            const message = (data.choices
+                                && data.choices[0]
+                                && data.choices[0].delta
+                                && data.choices[0].delta.content) || '';
+                            console.log(message);
+                            layui.tts.send(message);
+                            $human.response.messages.push(message);
+                        }
+                    });
                     $human.stream(reader, callback);
                 }
                 const message = $human.response.messages.join('');
@@ -190,20 +198,30 @@ layui.define(function (exports) {
             });
         },
         //语音转文字
-        asr: function (base64, callback) {
+        asr: function (blob, callback) {
             let load = layui.layer.load(0);
-            layui.$.post('api/speech/recognitions', base64, function (data) {
-                console.log(data);
-                if (data.err_no !== 0) {
-                    layui.layer.msg('语音识别失败！（' + data.err_no + ':' + data.err_msg + '）');
-                } else {
-                    typeof callback === 'function' && callback(data.result[0]);
-                }
+            const reader = new FileReader();
+            reader.onload = function () {
+                console.log(reader.result);
+                const data = encodeURIComponent(reader.result.split(',')[1]);
+                layui.$.post('api/speech/recognitions', data, function (data) {
+                    console.log(data);
+                    if (data.err_no !== 0) {
+                        layui.layer.msg('语音识别失败！（' + data.err_no + ':' + data.err_msg + '）');
+                    } else {
+                        typeof callback === 'function' && callback(data.result[0]);
+                    }
+                    layui.layer.close(load);
+                }).error(function (xhr, status, error) {
+                    layui.layer.close(load);
+                    layui.layer.msg('语音识别请求异常，请重试！（' + (error || status) + '）');
+                });
+            };
+            reader.onerror = function () {
                 layui.layer.close(load);
-            }).error(function (xhr, status, error) {
-                layui.layer.close(load);
-                layui.layer.msg('语音识别请求异常，请重试！（' + (error || status) + '）');
-            });
+                layui.layer.msg('读取录音文件失败！（' + reader.error + '）');
+            };
+            reader.readAsDataURL(blob);
         },
         //麦克风录音
         mike: function (audio, duration, callback) {
@@ -214,14 +232,7 @@ layui.define(function (exports) {
                     content: '<span id="loading">录音中...（30秒）<span>',
                     end: function () {
                         console.log('停止录音...');
-                        const reader = new FileReader();
-                        reader.onload = function () {
-                            typeof callback === 'function' && callback(reader.result.split(',')[1]);
-                        };
-                        reader.onerror = function () {
-                            layui.layer.msg('录音失败！（' + reader.error + '）');
-                        };
-                        reader.readAsDataURL(audio.getPCMBlob());
+                        typeof callback === 'function' && callback(audio.getPCMBlob());
                     }
                 });
                 audio.onprogress = function (params) {
