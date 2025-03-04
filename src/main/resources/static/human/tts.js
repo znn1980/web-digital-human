@@ -10,11 +10,11 @@ layui.define(function (exports) {
         ],
         per: 0,
         init: function (audio, callback) {
-            const load = layui.layer.load(0);
+            const loading = layui.layer.load(0);
             audio.onPause();
             audio.onPlay = function () {
                 layui.human.speak();
-                layui.layer.close(load);
+                layui.layer.close(loading);
             }
             audio.onDone = function () {
                 audio.onPause();
@@ -29,12 +29,12 @@ layui.define(function (exports) {
                     $tts.start();
                 };
                 $tts.ws.onclose = function () {
-                    layui.layer.close(load);
+                    layui.layer.close(loading);
                     console.log('WebSocket关闭！');
                     $tts.ws = null;
                 };
                 $tts.ws.onerror = function () {
-                    layui.layer.close(load);
+                    layui.layer.close(loading);
                     layui.layer.msg('语音合成失败！（WebSocket）');
                     $tts.ws = null;
                 };
@@ -49,7 +49,7 @@ layui.define(function (exports) {
                         }
                         if (data.code !== 0) {
                             $tts.ws.close();
-                            layui.layer.close(load);
+                            layui.layer.close(loading);
                             layui.layer.msg(`语音合成失败！（${data.code}:${data.message}）`);
                         }
                     }
@@ -58,7 +58,7 @@ layui.define(function (exports) {
                     }
                 };
             }).error(function (xhr, status, error) {
-                layui.layer.close(load);
+                layui.layer.close(loading);
                 layui.layer.msg('语音合成请求异常，请重试！（' + (error || status) + '）');
             });
         },

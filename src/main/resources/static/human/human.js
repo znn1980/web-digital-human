@@ -51,7 +51,7 @@ layui.define(function (exports) {
         load: function (human) {
             $human.me = human;
             $human.stop();
-            const load = layui.layer.msg('数字人，加载中...', {
+            const loading = layui.layer.msg('数字人，加载中...', {
                 icon: 16, shade: 0.3, time: 0,
                 content: '<span id="loading">数字人，加载中...<span>'
             });
@@ -79,7 +79,7 @@ layui.define(function (exports) {
                     layui.$('#loading').html('数字人，加载中...（' + Math.round(length / total * 100) + '%）');
                     if (length === total) {
                         $human.draw($human.frames.standby[0]);
-                        layui.layer.close(load);
+                        layui.layer.close(loading);
                         $human.standby();
                     }
                 });
@@ -145,26 +145,24 @@ layui.define(function (exports) {
             $human.id.speak = requestAnimationFrame($human._speak);
         },
         //说话
-        send: function (text, audio, callback) {
-            layui.tts.init(audio, function () {
-                $human.request.messages.push({role: 'user', content: text});
-                console.log($human.request);
-                fetch('api/chat/completions', {
-                    headers: {'Content-Type': 'application/json'},
-                    method: 'POST', body: JSON.stringify($human.request)
-                }).then(response => {
-                    if (!response.ok) {
-                        throw new Error(response.status + '-' + response.statusText);
-                    }
-                    return response.body;
-                }).then(data => {
-                    $human.response.messages = [];
-                    $human.stream(data.getReader(), callback);
-                }).catch(error => {
-                    typeof callback === 'function' && callback(true, null);
-                    $human.request.messages.pop();
-                    layui.layer.msg('发送数据失败！（' + error + '）');
-                });
+        send: function (text, callback) {
+            $human.request.messages.push({role: 'user', content: text});
+            console.log($human.request);
+            fetch('api/chat/completions', {
+                headers: {'Content-Type': 'application/json'},
+                method: 'POST', body: JSON.stringify($human.request)
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error(response.status + '-' + response.statusText);
+                }
+                return response.body;
+            }).then(data => {
+                $human.response.messages = [];
+                $human.stream(data.getReader(), callback);
+            }).catch(error => {
+                typeof callback === 'function' && callback(true, null);
+                $human.request.messages.pop();
+                layui.layer.msg('发送数据失败！（' + error + '）');
             });
         },
         stream: function (reader, callback) {
@@ -172,6 +170,7 @@ layui.define(function (exports) {
             return reader.read().then(({done, value}) => {
                 const result = decoder.decode(value, {stream: true});
                 console.log(done, result);
+                const text = [];
                 if (done) {
                     const message = $human.response.messages.join('');
                     if (message !== '') {
@@ -182,24 +181,22 @@ layui.define(function (exports) {
                         if (line && line.startsWith('data:')) {
                             const data = JSON.parse(line.substring('data:'.length));
                             console.log(data);
-                            const message = (data.choices
+                            text.push((data.choices
                                 && data.choices[0]
                                 && data.choices[0].delta
-                                && data.choices[0].delta.content) || '';
-                            console.log(message);
-                            layui.tts.send(message);
-                            $human.response.messages.push(message);
+                                && data.choices[0].delta.content) || '');
                         }
                     });
+                    console.log(text.join(''));
+                    $human.response.messages.push(text.join(''));
                     $human.stream(reader, callback);
                 }
-                const message = $human.response.messages.join('');
-                typeof callback === 'function' && callback(done, message);
+                typeof callback === 'function' && callback(done, text.join(''));
             });
         },
         //语音转文字
         asr: function (blob, callback) {
-            let load = layui.layer.load(0);
+            const loading = layui.layer.load(0);
             const reader = new FileReader();
             reader.onload = function () {
                 console.log(reader.result);
@@ -211,14 +208,14 @@ layui.define(function (exports) {
                     } else {
                         typeof callback === 'function' && callback(data.result[0]);
                     }
-                    layui.layer.close(load);
+                    layui.layer.close(loading);
                 }).error(function (xhr, status, error) {
-                    layui.layer.close(load);
+                    layui.layer.close(loading);
                     layui.layer.msg('语音识别请求异常，请重试！（' + (error || status) + '）');
                 });
             };
             reader.onerror = function () {
-                layui.layer.close(load);
+                layui.layer.close(loading);
                 layui.layer.msg('读取录音文件失败！（' + reader.error + '）');
             };
             reader.readAsDataURL(blob);
@@ -227,7 +224,7 @@ layui.define(function (exports) {
         mike: function (audio, duration, callback) {
             audio.start().then(() => {
                 console.log('开始录音...');
-                const load = layui.layer.msg('录音中...', {
+                const loading = layui.layer.msg('录音中...', {
                     time: 0, icon: 16, shade: 0.3, shadeClose: true,
                     content: '<span id="loading">录音中...（30秒）<span>',
                     end: function () {
@@ -239,7 +236,7 @@ layui.define(function (exports) {
                     console.log(params);
                     layui.$('#loading').html('录音中...（' + (duration - parseInt(params.duration)) + '秒）按下停止');
                     if (params.duration > duration) {
-                        layui.layer.close(load);
+                        layui.layer.close(loading);
                     }
                 };
             }, (error) => {
