@@ -15,6 +15,11 @@ layui.define(function (exports) {
                 title: '小川', value: 'human/xiaochuan',
                 standby: {frame: 113, interval: 20},
                 speak: {frame: 186, interval: 30}
+            },
+            {
+                title: '关关', value: 'human/guanguan',
+                standby: {frame: 152, interval: 80},
+                speak: {frame: 114, interval: 60}
             }
         ],
         me: null,
@@ -253,7 +258,7 @@ layui.define(function (exports) {
                 layui.$('.layim-chat-main').children().append([
                     '<li class="' + (typeof uuid === 'undefined' ? 'layim-chat-role-user' : '') + '">',
                     ' <div class="layim-chat-userinfo">',
-                    '  <img src="' + (typeof uuid === 'undefined' ? 'logo.png' : `${$human.me.value}/human.png`) + '" alt="">',
+                    '  <img src="' + (typeof uuid === 'undefined' ? 'logo.png' : `${$human.me.value}/me.png`) + '" alt="">',
                     '  <cite>' + (typeof uuid === 'undefined' ? '<i>' + _time + '</i>我' : $human.me.title + '<i>' + _time + '</i>') + '</cite>',
                     ' </div>',
                     ' <div id="CHAT-' + _uuid + '" class="layim-chat-text layui-text">' + text + '</div>',
