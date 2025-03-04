@@ -18,5 +18,5 @@
 
 ## 千帆大模型
 
-[对话Chat](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/om5aq2brc)
+[对话Chat](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/om5aq2brc)  
 [对话Chat V2](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/em4tsqo3v)

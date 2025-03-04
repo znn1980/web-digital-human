@@ -183,13 +183,14 @@ layui.define(function (exports) {
                     }
                 } else {
                     result.split('\n').forEach(line => {
-                        if (line && line.startsWith('data:')) {
+                        if (line && line.startsWith('data:') && !line.endsWith('[DONE]')) {
                             const data = JSON.parse(line.substring('data:'.length));
                             console.log(data);
                             text.push((data.choices
-                                && data.choices[0]
-                                && data.choices[0].delta
-                                && data.choices[0].delta.content) || '');
+                                    && data.choices[0]
+                                    && data.choices[0].delta
+                                    && data.choices[0].delta.reasoning_content)
+                                || data.choices[0].delta.content || '');
                         }
                     });
                     console.log(text.join(''));

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "config")
 public class HumanConfig {
     private Baidu baidu;
+    private Openai openai;
 
     public Baidu getBaidu() {
         return baidu;
@@ -15,6 +16,14 @@ public class HumanConfig {
 
     public void setBaidu(Baidu baidu) {
         this.baidu = baidu;
+    }
+
+    public Openai getOpenai() {
+        return openai;
+    }
+
+    public void setOpenai(Openai openai) {
+        this.openai = openai;
     }
 
     static class Baidu {
@@ -53,6 +62,27 @@ public class HumanConfig {
 
         public void setAccessSecretKey(String accessSecretKey) {
             this.accessSecretKey = accessSecretKey;
+        }
+    }
+
+    static class Openai {
+        private String baseUrl;
+        private String apiKey;
+
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
+        }
+
+        public String getApiKey() {
+            return apiKey;
+        }
+
+        public void setApiKey(String apiKey) {
+            this.apiKey = apiKey;
         }
     }
 }

@@ -10,6 +10,7 @@ import com.google.gson.Gson;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hc.client5.http.entity.EntityBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
@@ -27,7 +28,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
@@ -92,7 +95,7 @@ public class HumanController {
                         LOGGER.info("答：{}", json);
                         StreamUtils.copy("data:" + json + "\n\n", StandardCharsets.UTF_8, os);
                     }
-                    StreamUtils.copy("[DONE]\n\n", StandardCharsets.UTF_8, os);
+                    StreamUtils.copy("data:[DONE]\n\n", StandardCharsets.UTF_8, os);
                 } finally {
                     stream.close();
                 }
@@ -104,6 +107,29 @@ public class HumanController {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(os ->
                     StreamUtils.copy(json, StandardCharsets.UTF_8, os));
         }
+    }
+
+    @PostMapping("/chat/completions")
+    public ResponseEntity<StreamingResponseBody> chatCompletions(String request) throws IOException {
+        LOGGER.info("问：{}", request);
+        CloseableHttpResponse response = this.httpClient.execute(ClassicRequestBuilder
+                .post(String.format("%s/chat/completions", config.getOpenai().getBaseUrl()))
+                .addHeader("Authorization", String.format("Bearer %s", config.getOpenai().getApiKey()))
+                .setEntity(EntityBuilder.create()
+                        .setContentType(ContentType.APPLICATION_JSON)
+                        .setText(request).build()).build());
+        BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8));
+        return ResponseEntity.ok().contentType(MediaType.TEXT_EVENT_STREAM).body(os -> {
+            try {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    LOGGER.info("答：{}", line);
+                    StreamUtils.copy(line + "\n\n", StandardCharsets.UTF_8, os);
+                }
+            } finally {
+                response.close();
+            }
+        });
     }
 
     void refreshCredentials() throws IOException {
