@@ -4,9 +4,14 @@ config:
     app-secret-key:
     access-key:
     access-secret-key:
+  openai:
+    api-key:
+    base-url: https://api.deepseek.com
 
 server:
   port: 8080
+  tomcat:
+    uri-encoding: UTF-8
   ssl:
     enabled: true
     key-store: classpath:keystore.jks

@@ -12,6 +12,7 @@ import org.apache.hc.client5.http.entity.EntityBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
@@ -58,7 +59,6 @@ public class HumanController {
         this.refreshCredentials();
         return this.credentials.getAccessToken();
     }
-
 
     @PostMapping(value = "/api/speech/recognitions", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
@@ -110,7 +110,7 @@ public class HumanController {
     }
 
     @PostMapping("/chat/completions")
-    public ResponseEntity<StreamingResponseBody> chatCompletions(String request) throws IOException {
+    public ResponseEntity<StreamingResponseBody> chatCompletions(@RequestBody String request) throws IOException {
         LOGGER.info("问：{}", request);
         CloseableHttpResponse response = this.httpClient.execute(ClassicRequestBuilder
                 .post(String.format("%s/chat/completions", config.getOpenai().getBaseUrl()))
@@ -118,14 +118,24 @@ public class HumanController {
                 .setEntity(EntityBuilder.create()
                         .setContentType(ContentType.APPLICATION_JSON)
                         .setText(request).build()).build());
-        BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8));
-        return ResponseEntity.ok().contentType(MediaType.TEXT_EVENT_STREAM).body(os -> {
+        Stream stream = this.gson.fromJson(request, Stream.class);
+        return ResponseEntity.ok().contentType(stream.isStream() ? MediaType.TEXT_EVENT_STREAM : MediaType.APPLICATION_JSON).body(os -> {
             try {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    LOGGER.info("答：{}", line);
-                    StreamUtils.copy(line + "\n\n", StandardCharsets.UTF_8, os);
+                if (stream.isStream()) {
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            LOGGER.info("答：{}", line);
+                            StreamUtils.copy(line + "\n\n", StandardCharsets.UTF_8, os);
+                        }
+                    }
+                } else {
+                    String json = EntityUtils.toString(response.getEntity());
+                    LOGGER.info("答：{}", json);
+                    StreamUtils.copy(json, StandardCharsets.UTF_8, os);
                 }
+            } catch (ParseException e) {
+                throw new IOException(e);
             } finally {
                 response.close();
             }
@@ -145,6 +155,22 @@ public class HumanController {
             this.credentials.setErrorDescription(credentials.getErrorDescription());
             this.credentials.setAccessToken(credentials.getAccessToken());
             this.credentials.setExpiresIn(System.currentTimeMillis() + credentials.getExpiresIn() * 1000);
+        }
+    }
+
+    static class Stream {
+        private boolean stream;
+
+        public Stream() {
+            this.setStream(true);
+        }
+
+        public boolean isStream() {
+            return stream;
+        }
+
+        public void setStream(boolean stream) {
+            this.stream = stream;
         }
     }
 
