@@ -1,40 +1,29 @@
 package web.digital.human;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Configuration;
 
-@Component
-@ConfigurationProperties(prefix = "config")
-public class HumanConfig {
-    private Baidu baidu;
-
-    private Openai openai;
+@Configuration
+@ConfigurationProperties(prefix = "human")
+public class HumanProperties {
+    private final Baidu baidu = new Baidu();
+    private final Openai openai = new Openai();
 
     public Baidu getBaidu() {
-        return baidu;
-    }
-
-
-    public void setBaidu(Baidu baidu) {
-        this.baidu = baidu;
+        return this.baidu;
     }
 
     public Openai getOpenai() {
-        return openai;
-    }
-
-    public void setOpenai(Openai openai) {
-        this.openai = openai;
+        return this.openai;
     }
 
     static class Baidu {
         private String apiKey;
         private String secretKey;
-
-        private Qianfan qianfan;
+        private final Qianfan qianfan = new Qianfan();
 
         public String getApiKey() {
-            return apiKey;
+            return this.apiKey;
         }
 
         public void setApiKey(String apiKey) {
@@ -42,7 +31,7 @@ public class HumanConfig {
         }
 
         public String getSecretKey() {
-            return secretKey;
+            return this.secretKey;
         }
 
         public void setSecretKey(String secretKey) {
@@ -50,11 +39,7 @@ public class HumanConfig {
         }
 
         public Qianfan getQianfan() {
-            return qianfan;
-        }
-
-        public void setQianfan(Qianfan qianfan) {
-            this.qianfan = qianfan;
+            return this.qianfan;
         }
     }
 
@@ -64,7 +49,7 @@ public class HumanConfig {
         private String secretKey;
 
         public String getApiKey() {
-            return apiKey;
+            return this.apiKey;
         }
 
         public void setApiKey(String apiKey) {
@@ -72,7 +57,7 @@ public class HumanConfig {
         }
 
         public String getAccessKey() {
-            return accessKey;
+            return this.accessKey;
         }
 
         public void setAccessKey(String accessKey) {
@@ -80,7 +65,7 @@ public class HumanConfig {
         }
 
         public String getSecretKey() {
-            return secretKey;
+            return this.secretKey;
         }
 
         public void setSecretKey(String secretKey) {
@@ -93,7 +78,7 @@ public class HumanConfig {
         private String apiKey;
 
         public String getBaseUrl() {
-            return baseUrl;
+            return this.baseUrl;
         }
 
         public void setBaseUrl(String baseUrl) {
@@ -101,7 +86,7 @@ public class HumanConfig {
         }
 
         public String getApiKey() {
-            return apiKey;
+            return this.apiKey;
         }
 
         public void setApiKey(String apiKey) {

@@ -41,14 +41,14 @@ public class HumanController {
     private final static Logger LOGGER = LoggerFactory.getLogger(HumanController.class);
     private final static String ASR_URL = "https://vop.baidu.com/pro_api?token=%s&cuid=SC1234567890&dev_pid=80001";
     private final static String TOKEN_URL = "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=%s&client_secret=%s";
-    private final HumanConfig config;
+    private final HumanProperties properties;
     private final Gson gson;
     private final QianfanV2 client;
     private final CloseableHttpClient httpClient;
     private final Credentials credentials = new Credentials();
 
-    public HumanController(HumanConfig config, Gson gson, Qianfan client, CloseableHttpClient httpClient) {
-        this.config = config;
+    public HumanController(HumanProperties properties, Gson gson, Qianfan client, CloseableHttpClient httpClient) {
+        this.properties = properties;
         this.gson = gson;
         this.client = client.v2();
         this.httpClient = httpClient;
@@ -114,8 +114,8 @@ public class HumanController {
     public ResponseEntity<StreamingResponseBody> chatCompletions(@RequestBody ChatRequest request) throws IOException {
         LOGGER.info("问：{}", this.gson.toJson(request));
         CloseableHttpResponse response = this.httpClient.execute(ClassicRequestBuilder
-                .post(String.format("%s/chat/completions", config.getOpenai().getBaseUrl()))
-                .addHeader("Authorization", String.format("Bearer %s", config.getOpenai().getApiKey()))
+                .post(String.format("%s/chat/completions", properties.getOpenai().getBaseUrl()))
+                .addHeader("Authorization", String.format("Bearer %s", properties.getOpenai().getApiKey()))
                 .setEntity(EntityBuilder.create()
                         .setContentType(ContentType.APPLICATION_JSON)
                         .setText(this.gson.toJson(request)).build()).build());
@@ -151,7 +151,8 @@ public class HumanController {
         if (!StringUtils.hasText(this.credentials.getAccessToken())
                 || this.credentials.getExpiresIn() < System.currentTimeMillis()) {
             Credentials credentials = this.httpClient.execute(ClassicRequestBuilder
-                    .get(String.format(TOKEN_URL, config.getBaidu().getApiKey(), config.getBaidu().getSecretKey())).build(), response -> {
+                    .get(String.format(TOKEN_URL, properties.getBaidu().getApiKey(), properties.getBaidu().getSecretKey()))
+                    .build(), response -> {
                 String json = EntityUtils.toString(response.getEntity());
                 LOGGER.info("TOKEN：{}", json);
                 return this.gson.fromJson(json, Credentials.class);

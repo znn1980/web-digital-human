@@ -1,19 +1,19 @@
-# 数字人（H5）（[演示版](https://121.28.146.202:15003/index.html)）
+# 数字人（[演示](https://121.28.146.202:15003/index.html)）
 
 ![演示](h5.gif)
 
-## 设置 （[application.yml](src/main/resources/application.yml)）
+## 设置
 
 > 项目中使用的语音识别、语音合成的是百度AI开放平台的产品，需要申请对应的[AK/SK](https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu)。  
 ```
-config:
+human:
   baidu:
     api-key: ************************
     secret-key: ********************************
 ```
 > 项目中使用的智能对话是千帆大模型的产品，需要申请对应的[API Key](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Um2wxbaps)。
 ```
-config:
+human:
   baidu:
     qianfan:
       api-key: ***************************************************************************
@@ -22,7 +22,7 @@ config:
 ```
 > 项目中包含一个通用的智能对话接口,您可以使用所有厂家符合OpenAI标准的产品，如：DeepSeek等。
 ```
-config:
+human:
   openai:
     base-url: https://api.deepseek.com
     api-key: ********************************

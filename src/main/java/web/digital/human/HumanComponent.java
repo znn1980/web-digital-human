@@ -13,21 +13,28 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-
 @Component
-public class HumanClient {
-    private final HumanConfig config;
+public class HumanComponent {
+    private final HumanProperties properties;
 
-    public HumanClient(HumanConfig config) {
-        this.config = config;
+    public HumanComponent(HumanProperties properties) {
+        this.properties = properties;
+    }
+
+    @Bean
+    public Gson gson() {
+        return new GsonBuilder()
+                .setFieldNamingStrategy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .create();
     }
 
     @Bean
     public Qianfan client() {
-        if (StringUtils.hasText(config.getBaidu().getQianfan().getApiKey())) {
-            return new Qianfan(config.getBaidu().getQianfan().getApiKey());
+        if (StringUtils.hasText(properties.getBaidu().getQianfan().getApiKey())) {
+            return new Qianfan(properties.getBaidu().getQianfan().getApiKey());
         }
-        return new Qianfan(config.getBaidu().getQianfan().getAccessKey(), config.getBaidu().getQianfan().getSecretKey());
+        return new Qianfan(properties.getBaidu().getQianfan().getAccessKey()
+                , properties.getBaidu().getQianfan().getSecretKey());
     }
 
     @Bean
@@ -43,12 +50,5 @@ public class HumanClient {
                         .setConnectionRequestTimeout(Timeout.ofSeconds(10))
                         .build())
                 .build();
-    }
-
-    @Bean
-    public Gson gson() {
-        return new GsonBuilder()
-                .setFieldNamingStrategy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                .create();
     }
 }
