@@ -11,6 +11,7 @@ import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.core5.util.Timeout;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 
 @Component
@@ -23,7 +24,10 @@ public class HumanClient {
 
     @Bean
     public Qianfan client() {
-        return new Qianfan(config.getBaidu().getAccessKey(), config.getBaidu().getAccessSecretKey());
+        if (StringUtils.hasText(config.getBaidu().getQianfan().getApiKey())) {
+            return new Qianfan(config.getBaidu().getQianfan().getApiKey());
+        }
+        return new Qianfan(config.getBaidu().getQianfan().getAccessKey(), config.getBaidu().getQianfan().getSecretKey());
     }
 
     @Bean

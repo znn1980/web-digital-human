@@ -1,12 +1,14 @@
 config:
   baidu:
-    app-key:
-    app-secret-key:
-    access-key:
-    access-secret-key:
-  openai:
     api-key:
+    secret-key:
+    qianfan:
+      api-key:
+      access-key:
+      secret-key:
+  openai:
     base-url: https://api.deepseek.com
+    api-key:
 
 server:
   port: 8080

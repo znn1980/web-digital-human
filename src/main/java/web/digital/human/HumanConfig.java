@@ -1,6 +1,5 @@
 package web.digital.human;
 
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -8,11 +7,13 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "config")
 public class HumanConfig {
     private Baidu baidu;
+
     private Openai openai;
 
     public Baidu getBaidu() {
         return baidu;
     }
+
 
     public void setBaidu(Baidu baidu) {
         this.baidu = baidu;
@@ -27,25 +28,47 @@ public class HumanConfig {
     }
 
     static class Baidu {
-        private String appKey;
-        private String appSecretKey;
+        private String apiKey;
+        private String secretKey;
+
+        private Qianfan qianfan;
+
+        public String getApiKey() {
+            return apiKey;
+        }
+
+        public void setApiKey(String apiKey) {
+            this.apiKey = apiKey;
+        }
+
+        public String getSecretKey() {
+            return secretKey;
+        }
+
+        public void setSecretKey(String secretKey) {
+            this.secretKey = secretKey;
+        }
+
+        public Qianfan getQianfan() {
+            return qianfan;
+        }
+
+        public void setQianfan(Qianfan qianfan) {
+            this.qianfan = qianfan;
+        }
+    }
+
+    static class Qianfan {
+        private String apiKey;
         private String accessKey;
-        private String accessSecretKey;
+        private String secretKey;
 
-        public String getAppKey() {
-            return appKey;
+        public String getApiKey() {
+            return apiKey;
         }
 
-        public void setAppKey(String appKey) {
-            this.appKey = appKey;
-        }
-
-        public String getAppSecretKey() {
-            return appSecretKey;
-        }
-
-        public void setAppSecretKey(String appSecretKey) {
-            this.appSecretKey = appSecretKey;
+        public void setApiKey(String apiKey) {
+            this.apiKey = apiKey;
         }
 
         public String getAccessKey() {
@@ -56,12 +79,12 @@ public class HumanConfig {
             this.accessKey = accessKey;
         }
 
-        public String getAccessSecretKey() {
-            return accessSecretKey;
+        public String getSecretKey() {
+            return secretKey;
         }
 
-        public void setAccessSecretKey(String accessSecretKey) {
-            this.accessSecretKey = accessSecretKey;
+        public void setSecretKey(String secretKey) {
+            this.secretKey = secretKey;
         }
     }
 

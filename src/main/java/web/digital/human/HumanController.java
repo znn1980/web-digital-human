@@ -133,12 +133,14 @@ public class HumanController {
                         }
                     }
                 } else {
-                    String json = EntityUtils.toString(response.getEntity());
-                    LOGGER.info("答：{}", json);
-                    StreamUtils.copy(json, StandardCharsets.UTF_8, os);
+                    try {
+                        String json = EntityUtils.toString(response.getEntity());
+                        LOGGER.info("答：{}", json);
+                        StreamUtils.copy(json, StandardCharsets.UTF_8, os);
+                    } catch (ParseException e) {
+                        throw new IOException(e);
+                    }
                 }
-            } catch (ParseException e) {
-                throw new IOException(e);
             } finally {
                 response.close();
             }
@@ -149,7 +151,7 @@ public class HumanController {
         if (!StringUtils.hasText(this.credentials.getAccessToken())
                 || this.credentials.getExpiresIn() < System.currentTimeMillis()) {
             Credentials credentials = this.httpClient.execute(ClassicRequestBuilder
-                    .get(String.format(TOKEN_URL, config.getBaidu().getAppKey(), config.getBaidu().getAppSecretKey())).build(), response -> {
+                    .get(String.format(TOKEN_URL, config.getBaidu().getApiKey(), config.getBaidu().getSecretKey())).build(), response -> {
                 String json = EntityUtils.toString(response.getEntity());
                 LOGGER.info("TOKEN：{}", json);
                 return this.gson.fromJson(json, Credentials.class);
