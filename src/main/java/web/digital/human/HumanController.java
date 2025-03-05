@@ -3,6 +3,7 @@ package web.digital.human;
 import com.baidubce.qianfan.Qianfan;
 import com.baidubce.qianfan.QianfanV2;
 import com.baidubce.qianfan.core.StreamIterator;
+import com.baidubce.qianfan.model.chat.ChatRequest;
 import com.baidubce.qianfan.model.chat.v2.request.RequestV2;
 import com.baidubce.qianfan.model.chat.v2.response.ResponseV2;
 import com.baidubce.qianfan.model.chat.v2.response.StreamResponseV2;
@@ -110,21 +111,23 @@ public class HumanController {
     }
 
     @PostMapping("/chat/completions")
-    public ResponseEntity<StreamingResponseBody> chatCompletions(@RequestBody String request) throws IOException {
-        LOGGER.info("问：{}", request);
+    public ResponseEntity<StreamingResponseBody> chatCompletions(@RequestBody ChatRequest request) throws IOException {
+        LOGGER.info("问：{}", this.gson.toJson(request));
         CloseableHttpResponse response = this.httpClient.execute(ClassicRequestBuilder
                 .post(String.format("%s/chat/completions", config.getOpenai().getBaseUrl()))
                 .addHeader("Authorization", String.format("Bearer %s", config.getOpenai().getApiKey()))
                 .setEntity(EntityBuilder.create()
                         .setContentType(ContentType.APPLICATION_JSON)
-                        .setText(request).build()).build());
-        Stream stream = this.gson.fromJson(request, Stream.class);
-        return ResponseEntity.ok().contentType(stream.isStream() ? MediaType.TEXT_EVENT_STREAM : MediaType.APPLICATION_JSON).body(os -> {
+                        .setText(this.gson.toJson(request)).build()).build());
+        return ResponseEntity.ok().contentType(request.getStream() ? MediaType.TEXT_EVENT_STREAM : MediaType.APPLICATION_JSON).body(os -> {
             try {
-                if (stream.isStream()) {
+                if (request.getStream()) {
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8))) {
                         String line;
                         while ((line = reader.readLine()) != null) {
+                            if (line.isEmpty()) {
+                                continue;
+                            }
                             LOGGER.info("答：{}", line);
                             StreamUtils.copy(line + "\n\n", StandardCharsets.UTF_8, os);
                         }
@@ -155,22 +158,6 @@ public class HumanController {
             this.credentials.setErrorDescription(credentials.getErrorDescription());
             this.credentials.setAccessToken(credentials.getAccessToken());
             this.credentials.setExpiresIn(System.currentTimeMillis() + credentials.getExpiresIn() * 1000);
-        }
-    }
-
-    static class Stream {
-        private boolean stream;
-
-        public Stream() {
-            this.setStream(true);
-        }
-
-        public boolean isStream() {
-            return stream;
-        }
-
-        public void setStream(boolean stream) {
-            this.stream = stream;
         }
     }
 
