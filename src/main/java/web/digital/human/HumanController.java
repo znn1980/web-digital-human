@@ -19,6 +19,7 @@ import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 @Controller
 public class HumanController {
@@ -94,9 +96,9 @@ public class HumanController {
                         }
                         String json = this.gson.toJson(response);
                         LOGGER.info("答：{}", json);
-                        StreamUtils.copy("data:" + json + "\n\n", StandardCharsets.UTF_8, os);
+                        StreamUtils.copy("data: " + json + "\n\n", StandardCharsets.UTF_8, os);
                     }
-                    StreamUtils.copy("data:[DONE]\n\n", StandardCharsets.UTF_8, os);
+                    StreamUtils.copy("data: [DONE]\n\n", StandardCharsets.UTF_8, os);
                 } finally {
                     stream.close();
                 }
@@ -119,10 +121,13 @@ public class HumanController {
                 .setEntity(EntityBuilder.create()
                         .setContentType(ContentType.APPLICATION_JSON)
                         .setText(this.gson.toJson(request)).build()).build());
-        return ResponseEntity.ok().contentType(request.getStream() ? MediaType.TEXT_EVENT_STREAM : MediaType.APPLICATION_JSON).body(os -> {
+        HttpHeaders headers = new HttpHeaders();
+        Arrays.stream(response.getHeaders()).forEach(header -> headers.add(header.getName(), header.getValue()));
+        return ResponseEntity.status(response.getCode()).headers(headers).body(os -> {
             try {
-                if (request.getStream()) {
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8))) {
+                if (MediaType.TEXT_EVENT_STREAM.isCompatibleWith(headers.getContentType())) {
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()
+                            , StandardCharsets.UTF_8))) {
                         String line;
                         while ((line = reader.readLine()) != null) {
                             if (line.isEmpty()) {
