@@ -1,64 +1,12 @@
-const AudioPlayer = function () {
-    this.isPlaying = false;
-    this.isDoneing = true;
-    this.audioQueue = [];
-    this.audio = null;
-    this.onPlay = function () {
-    };
-    this.onDone = function () {
-    };
-    this.onPush = function (blob) {
-        this.audioQueue.push(new Audio(URL.createObjectURL(blob)));
-        this.onPlayAudio();
-    };
-    this.onPause = function () {
-        if (this.audio) {
-            this.audio.pause();
-        }
-        this.audioQueue = [];
-        this.isPlaying = false;
-        this.isDoneing = true;
-    }
-    this.onPlayAudio = function () {
-        this.audio = this.isPlaying ? null : this.audioQueue.shift();
-        if (typeof this.audio === 'undefined') {
-            this.isDoneing = true;
-            this.onDone();
-        } else if (this.audio) {
-            this.audio.load();
-            this.audio.oncanplaythrough = () => {
-                this.audio.play();
-            };
-            this.audio.onplay = () => {
-                this.isPlaying = true;
-                if (this.isDoneing) {
-                    this.isDoneing = false;
-                    this.onPlay();
-                }
-            };
-            this.audio.onended = () => {
-                this.isPlaying = false;
-                this.onPlayAudio();
-            };
-            this.audio.onerror = () => {
-                this.isPlaying = false;
-                this.onPlayAudio();
-            };
-        }
-    };
-};
-
-const PCMAudioPlayer = function (sampleRate) {
+const AudioPlayer = function (sampleRate, onPlay, onDone) {
     this.sampleRate = sampleRate;
     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     this.audioQueue = [];
     this.isPlaying = false;
     this.isDoneing = true;
     this.bufferSource = null;
-    this.onPlay = function () {
-    };
-    this.onDone = function () {
-    };
+    this.onPlay = onPlay;
+    this.onDone = onDone;
     this.onPause = function () {
         if (this.bufferSource) {
             this.bufferSource.stop();

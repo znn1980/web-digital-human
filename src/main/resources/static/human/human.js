@@ -156,15 +156,15 @@ layui.define(function (exports) {
             fetch('api/chat/completions', {
                 headers: {'Content-Type': 'application/json'},
                 method: 'POST', body: JSON.stringify($human.request)
-            }).then(response => {
+            }).then(function (response) {
                 if (!response.ok) {
                     throw new Error(response.status + '-' + response.statusText);
                 }
                 return response.body;
-            }).then(data => {
+            }).then(function (data) {
                 $human.response.messages = [];
                 $human.stream(data.getReader(), callback);
-            }).catch(error => {
+            }).catch(function (error) {
                 typeof callback === 'function' && callback(true, null);
                 $human.request.messages.pop();
                 layui.layer.msg('发送数据失败！（' + error + '）');
@@ -172,7 +172,7 @@ layui.define(function (exports) {
         },
         stream: function (reader, callback) {
             const decoder = new TextDecoder('UTF-8');
-            return reader.read().then(({done, value}) => {
+            return reader.read().then(function ({done, value}) {
                 const result = decoder.decode(value, {stream: true});
                 console.log(done, result);
                 const text = [];
@@ -225,36 +225,12 @@ layui.define(function (exports) {
             };
             reader.readAsDataURL(blob);
         },
-        //麦克风录音
-        mike: function (audio, duration, callback) {
-            audio.start().then(() => {
-                console.log('开始录音...');
-                const loading = layui.layer.msg('录音中...', {
-                    time: 0, icon: 16, shade: 0.3, shadeClose: true,
-                    content: '<span id="loading">录音中...（30秒）<span>',
-                    end: function () {
-                        console.log('停止录音...');
-                        typeof callback === 'function' && callback(audio.getPCMBlob());
-                    }
-                });
-                audio.onprogress = function (params) {
-                    console.log(params);
-                    layui.$('#loading').html('录音中...（' + (duration - parseInt(params.duration)) + '秒）按下停止');
-                    if (params.duration > duration) {
-                        layui.layer.close(loading);
-                    }
-                };
-            }, (error) => {
-                layui.layer.msg(`麦克风打开失败！（${error.name}:${error.message}）`);
-            });
-        },
-        qa: function (text, uuid) {
-            if (uuid && uuid !== '') {
+        chat: function (text, uuid) {
+            if (layui.$(`#CHAT-${uuid}`).length > 0) {
                 layui.$(`#CHAT-${uuid}`).html(text);
             } else {
-                const _date = new Date();
-                const _uuid = _date.getTime();
-                const _time = layui.util.toDateString(_date, 'yyyy-MM-dd HH:mm:ss');
+                const _uuid = Date.now();
+                const _time = layui.util.toDateString(Date.now(), 'yyyy-MM-dd HH:mm:ss');
                 layui.$('.layim-chat-main').children().append([
                     '<li class="' + (typeof uuid === 'undefined' ? 'layim-chat-role-user' : '') + '">',
                     ' <div class="layim-chat-userinfo">',

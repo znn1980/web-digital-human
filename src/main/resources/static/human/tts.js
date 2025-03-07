@@ -9,20 +9,8 @@ layui.define(function (exports) {
             {title: '度丫丫', value: 4}
         ],
         per: 0,
-        init: function (audio, callback) {
+        open: function (callback) {
             const loading = layui.layer.load(0);
-            audio.onPause();
-            audio.onPlay = function () {
-                layui.human.speak();
-                layui.layer.close(loading);
-            }
-            audio.onDone = function () {
-                audio.onPause();
-                layui.human.standby();
-                if ($tts.ws) {
-                    $tts.ws.close();
-                }
-            }
             layui.$.get('api/credentials', function (data) {
                 $tts.ws = new WebSocket(`${$tts.url}?access_token=${data}&per=${$tts.per}`);
                 $tts.ws.onopen = function () {
@@ -39,22 +27,21 @@ layui.define(function (exports) {
                     $tts.ws = null;
                 };
                 $tts.ws.onmessage = function (e) {
-                    if (typeof e.data === 'string') {
-                        console.log(e.data);
+                    console.log(e.data);
+                    if (e.data instanceof Blob) {
+                        typeof callback === 'function' && callback(e.data);
+                    } else {
                         const data = JSON.parse(e.data);
                         if (data.type === 'system.started' && data.code === 0) {
-                            typeof callback === 'function' && callback();
+                            typeof callback === 'function' && callback(null);
                         }
                         if (data.type === 'system.finished' && data.code === 0) {
+                            $tts.ws.close();
                         }
                         if (data.code !== 0) {
                             $tts.ws.close();
-                            layui.layer.close(loading);
                             layui.layer.msg(`语音合成失败！（${data.code}:${data.message}）`);
                         }
-                    }
-                    if (e.data instanceof Blob) {
-                        audio.onPush(e.data);
                     }
                 };
             }).error(function (xhr, status, error) {
@@ -72,7 +59,7 @@ layui.define(function (exports) {
                 $tts.ws.send(JSON.stringify({type: 'system.start', payload: $tts.payload}));
             }
         },
-        finish: function () {
+        stop: function () {
             if ($tts.ws) {
                 $tts.ws.send(JSON.stringify({type: 'system.finish'}));
             }
