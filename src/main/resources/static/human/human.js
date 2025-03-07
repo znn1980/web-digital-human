@@ -229,22 +229,19 @@ layui.define(function (exports) {
             if (layui.$(`#CHAT-${uuid}`).length > 0) {
                 layui.$(`#CHAT-${uuid}`).html(text);
             } else {
-                const _uuid = Date.now();
-                const _time = layui.util.toDateString(Date.now(), 'yyyy-MM-dd HH:mm:ss');
+                const ymd = layui.util.toDateString(Date.now(), 'yyyy-MM-dd HH:mm:ss');
                 layui.$('.layim-chat-main').children().append([
-                    '<li class="' + (typeof uuid === 'undefined' ? 'layim-chat-role-user' : '') + '">',
+                    '<li class="' + (uuid ? '' : 'layim-chat-role-user') + '">',
                     ' <div class="layim-chat-userinfo">',
-                    '  <img src="' + (typeof uuid === 'undefined' ? 'logo.png' : `${$human.me.value}/me.png`) + '" alt="">',
-                    '  <cite>' + (typeof uuid === 'undefined' ? '<i>' + _time + '</i>我' : $human.me.title + '<i>' + _time + '</i>') + '</cite>',
+                    '  <img src="' + (uuid ? `${$human.me.value}/me.png` : 'logo.png') + '" alt="">',
+                    '  <cite>' + (uuid ? `${$human.me.title}<i>${ymd}</i>` : `<i>${ymd}</i>我`) + '</cite>',
                     ' </div>',
-                    ' <div id="CHAT-' + _uuid + '" class="layim-chat-text layui-text">' + text + '</div>',
+                    ' <div id="CHAT-' + (uuid || Date.now()) + '" class="layim-chat-text layui-text">' + text + '</div>',
                     '</li>'
                 ].join(''));
-                uuid = _uuid;
             }
             const dom = document.querySelector('.layim-chat-main');
             dom.scrollTop = dom.scrollHeight;
-            return uuid;
         }
     };
     exports('human', $human);
