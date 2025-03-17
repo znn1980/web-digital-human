@@ -9,6 +9,7 @@ import com.baidubce.qianfan.model.chat.v2.response.ResponseV2;
 import com.baidubce.qianfan.model.chat.v2.response.StreamResponseV2;
 import com.google.gson.Gson;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.hc.client5.http.entity.EntityBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
@@ -35,8 +36,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @Controller
 public class HumanController {
@@ -152,11 +155,43 @@ public class HumanController {
         });
     }
 
+    @GetMapping(value = "/aliyun/nls-meta/token", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public String token() throws IOException {
+        BasicNameValuePair[] params = {
+                new BasicNameValuePair("AccessKeyId", this.properties.getAlibaba().getAliyun().getAccessKeyId()),
+                new BasicNameValuePair("Action", "CreateToken"),
+                new BasicNameValuePair("Format", "JSON"),
+                new BasicNameValuePair("RegionId", "cn-shanghai"),
+                new BasicNameValuePair("SignatureMethod", "HMAC-SHA1"),
+                new BasicNameValuePair("SignatureNonce", UUID.randomUUID().toString()),
+                new BasicNameValuePair("SignatureVersion", "1.0"),
+                new BasicNameValuePair("Timestamp", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") {{
+                    this.setTimeZone(new SimpleTimeZone(0, "GMT"));
+                }}.format(new Date())),
+                new BasicNameValuePair("Version", "2019-02-28"),
+        };
+        StringJoiner sign = new StringJoiner("&");
+        for (BasicNameValuePair param : params) {
+            sign.add(String.format("%s=%s", param.getName(), URLEncoder.encode(param.getValue(), "UTF-8")));
+        }
+        return this.httpClient.execute(ClassicRequestBuilder.get("https://nls-meta.cn-shanghai.aliyuncs.com/")
+                .addParameter("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1"
+                        , String.format("%s&", this.properties.getAlibaba().getAliyun().getAccessKeySecret()))
+                        .hmac(String.format("GET&%s&%s", URLEncoder.encode("/", "UTF-8")
+                                , URLEncoder.encode(sign.toString(), "UTF-8")))))
+                .addParameters(params).build(), response -> {
+            String json = EntityUtils.toString(response.getEntity());
+            LOGGER.info("NLS-META：{}", json);
+            return json;
+        });
+    }
+
     void refreshCredentials() throws IOException {
         if (!StringUtils.hasText(this.credentials.getAccessToken())
                 || this.credentials.getExpiresIn() < System.currentTimeMillis()) {
             Credentials credentials = this.httpClient.execute(ClassicRequestBuilder
-                    .get(String.format(TOKEN_URL, properties.getBaidu().getApiKey(), properties.getBaidu().getSecretKey()))
+                    .get(String.format(TOKEN_URL, this.properties.getBaidu().getApiKey(), this.properties.getBaidu().getSecretKey()))
                     .build(), response -> {
                 String json = EntityUtils.toString(response.getEntity());
                 LOGGER.info("TOKEN：{}", json);

@@ -2,9 +2,6 @@ layui.define(function (exports) {
     const $tts = {
         ws: null,
         task_id: null,
-        app_key: '',
-        access_key_id: '',
-        access_key_secret: '',
         sound: [
             {title: '小云', value: 'xiaoyun'},
             {title: '小刚', value: 'xiaogang'}
@@ -12,7 +9,7 @@ layui.define(function (exports) {
         voice: 'xiaoyun',
         open: function (callback) {
             const loading = layui.layer.load(0);
-            layui.$.get(`https://nls-meta.cn-shanghai.aliyuncs.com/?${$tts.sign()}`, function (data) {
+            layui.$.get('aliyun/nls-meta/token', function (data) {
                 console.log(data);
                 $tts.ws = new WebSocket(`wss://nls-gateway-cn-beijing.aliyuncs.com/ws/v1?token=${data.Token.Id}`);
                 $tts.ws.binaryType = "arraybuffer";
@@ -70,33 +67,13 @@ layui.define(function (exports) {
                 return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
             });
         },
-        sign: function () {
-            const params = [
-                `AccessKeyId=${$tts.access_key_id}`,
-                '&Action=CreateToken',
-                '&Format=JSON',
-                '&RegionId=cn-shanghai',
-                '&SignatureMethod=HMAC-SHA1',
-                `&SignatureNonce=${$tts.uuid()}`,
-                '&SignatureVersion=1.0',
-                `&Timestamp=${encodeURIComponent(new Date().toISOString())}`,
-                '&Version=2019-02-28'
-            ];
-
-            let sign = params.join('');
-            sign = `GET&${encodeURIComponent('/')}&${encodeURIComponent(sign)}`;
-            sign = CryptoJS.HmacSHA1(sign, $tts.access_key_secret + '&');
-            sign = CryptoJS.enc.Base64.stringify(sign);
-            sign = `Signature=${encodeURIComponent(sign)}&${params.join('')}`;
-            return sign;
-        },
         header: function (name) {
             return {
                 message_id: $tts.uuid(),
                 task_id: $tts.task_id,
                 namespace: 'FlowingSpeechSynthesizer',
                 name: name,
-                appkey: $tts.app_key
+                appkey: 'HgbUmJvwD7r8Zf3Q'
             };
         },
         //voice【发音人，默认是xiaoyun。】

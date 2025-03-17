@@ -6,6 +6,10 @@ human:
       api-key:
       access-key:
       secret-key:
+  alibaba:
+    aliyun:
+      access-key-id:
+      access-key-secret:
   openai:
     base-url: https://api.deepseek.com
     api-key:

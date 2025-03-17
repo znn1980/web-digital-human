@@ -7,10 +7,15 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "human")
 public class HumanProperties {
     private final Baidu baidu = new Baidu();
+    private final Alibaba alibaba = new Alibaba();
     private final Openai openai = new Openai();
 
     public Baidu getBaidu() {
         return this.baidu;
+    }
+
+    public Alibaba getAlibaba() {
+        return this.alibaba;
     }
 
     public Openai getOpenai() {
@@ -70,6 +75,35 @@ public class HumanProperties {
 
         public void setSecretKey(String secretKey) {
             this.secretKey = secretKey;
+        }
+    }
+
+    static class Alibaba {
+        private final Aliyun aliyun = new Aliyun();
+
+        public Aliyun getAliyun() {
+            return this.aliyun;
+        }
+    }
+
+    static class Aliyun {
+        private String accessKeyId;
+        private String accessKeySecret;
+
+        public String getAccessKeyId() {
+            return accessKeyId;
+        }
+
+        public void setAccessKeyId(String accessKeyId) {
+            this.accessKeyId = accessKeyId;
+        }
+
+        public String getAccessKeySecret() {
+            return accessKeySecret;
+        }
+
+        public void setAccessKeySecret(String accessKeySecret) {
+            this.accessKeySecret = accessKeySecret;
         }
     }
 
