@@ -208,9 +208,9 @@
                 return;
             }
             layui.human.chat(layui.$('#text').val());
-            layui.tts.open(function (blob) {
-                if (blob) {
-                    audioPlayer.onPush(blob);
+            layui.tts.open(function (buffer) {
+                if (buffer) {
+                    audioPlayer.onPush(buffer);
                     return;
                 }
                 const uuid = Date.now();
