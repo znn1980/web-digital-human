@@ -92,6 +92,7 @@
 <script src="human/audio.player.js"></script>
 <script src="human/audio.recorder.js"></script>
 <script src="human/marked.min.js"></script>
+<script src="human/crypto-js.min.js"></script>
 <script src="layui/layui.js"></script>
 <script>
     layui.config({
@@ -99,7 +100,7 @@
         version: Date.now()
     }).extend({
         human: '{/}human/human',
-        tts: '{/}human/tts'
+        tts: '{/}human/aliyun.tts'
     }).use(['human', 'tts'], function () {
         const audioRecorder = new Recorder({sampleRate: 16000, sampleBits: 16, numChannels: 1});
         const audioPlayer = new AudioPlayer(16000, function () {

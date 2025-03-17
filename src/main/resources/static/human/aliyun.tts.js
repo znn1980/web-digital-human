@@ -1,15 +1,21 @@
 layui.define(function (exports) {
     const $tts = {
-        ws: null, id: null, key: null,
+        ws: null,
+        nls: {
+            task_id: null,
+            app_key: '',
+            access_key_id: '',
+            access_key_secret: ''
+        },
         open: function (callback) {
             const loading = layui.layer.load(0);
-            layui.$.get('', function (data) {
-                $tts.id = 'TASK-' + Date.now();
-                $tts.key = data.key;
-                $tts.ws = new WebSocket(`wss://nls-gateway-cn-beijing.aliyuncs.com/ws/v1?token=${data.token}`);
+            layui.$.get(`http://nls-meta.cn-shanghai.aliyuncs.com/?${$tts.sign()}`, function (data) {
+                console.log(data);
+                $tts.ws = new WebSocket(`wss://nls-gateway-cn-beijing.aliyuncs.com/ws/v1?token=${data.Token.Id}`);
                 $tts.ws.binaryType = "arraybuffer";
                 $tts.ws.onopen = function () {
                     if ($tts.ws.readyState === WebSocket.OPEN) {
+                        $tts.nls.task_id = $tts.uuid();
                         $tts.start();
                     }
                 };
@@ -26,7 +32,8 @@ layui.define(function (exports) {
                 $tts.ws.onmessage = function (e) {
                     console.log(e.data);
                     if (e.data instanceof ArrayBuffer) {
-                        typeof callback === 'function' && callback(e.data);
+                        const blob = new Blob([e.data]);
+                        typeof callback === 'function' && callback(blob);
                     } else {
                         const data = JSON.parse(e.data);
                         if (data.header.name === 'SynthesisStarted' && data.header.status === 20000000) {
@@ -37,7 +44,7 @@ layui.define(function (exports) {
                         }
                         if (data.header.status !== 20000000) {
                             $tts.ws.close();
-                            layui.layer.msg(`语音合成失败！（${data.header.status}:${data.header.status_message}）`);
+                            layui.layer.msg(`语音合成失败！（${data.header.status}:${data.header.status_text}）`);
                         }
                     }
                 };
@@ -46,13 +53,48 @@ layui.define(function (exports) {
                 layui.layer.msg('语音合成请求异常，请重试！（' + (error || status) + '）');
             });
         },
+        uuid: function () {
+            let d = Date.now();
+            let d2 = (performance && performance.now && (performance.now() * 1000)) || 0;
+            return 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                let r = Math.random() * 16; //random number between 0 and 16
+                if (d > 0) {
+                    r = (d + r) % 16 | 0;
+                    d = Math.floor(d / 16);
+                } else {
+                    r = (d2 + r) % 16 | 0;
+                    d2 = Math.floor(d2 / 16);
+                }
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        },
+        sign: function () {
+            const params = [
+                `AccessKeyId=${$tts.nls.access_key_id}`,
+                '&Action=CreateToken',
+                '&Format=JSON',
+                '&RegionId=cn-shanghai',
+                '&SignatureMethod=HMAC-SHA1',
+                `&SignatureNonce=${$tts.uuid()}`,
+                '&SignatureVersion=1.0',
+                `&Timestamp=${encodeURIComponent(new Date().toISOString())}`,
+                '&Version=2019-02-28'
+            ];
+
+            let sign = params.join('');
+            sign = `GET&${encodeURIComponent('/')}&${encodeURIComponent(sign)}`;
+            sign = CryptoJS.HmacSHA1(sign, $tts.nls.access_key_secret + '&');
+            sign = CryptoJS.enc.Base64.stringify(sign);
+            sign = `Signature=${encodeURIComponent(sign)}&${params.join('')}`;
+            return sign;
+        },
         header: function (name) {
             return {
-                message_id: 'MESSAGE-' + Date.now(),
-                task_id: $tts.id,
+                message_id: $tts.uuid(),
+                task_id: $tts.nls.task_id,
                 namespace: 'FlowingSpeechSynthesizer',
                 name: name,
-                appkey: $tts.key
+                appkey: $tts.nls.app_key
             };
         },
         //voice【发音人，默认是xiaoyun。】
