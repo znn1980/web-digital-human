@@ -15,11 +15,9 @@ const AudioPlayer = function (sampleRate, onPlay, onDone) {
         this.isPlaying = false;
         this.isDoneing = true;
     };
-    this.onPush = function (blob) {
-        blob.arrayBuffer().then(buffer => {
-            this.audioQueue.push(buffer);
-            this.onPlayNextAudio();
-        });
+    this.onPush = function (buffer) {
+        this.audioQueue.push(buffer);
+        this.onPlayNextAudio();
     };
     //将arrayBuffer转为audioBuffer
     this.onBufferPCMData = function (buffer) {

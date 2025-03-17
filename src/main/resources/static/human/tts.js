@@ -8,11 +8,11 @@ layui.define(function (exports) {
             {title: '度逍遥', value: 3},
             {title: '度丫丫', value: 4}
         ],
-        per: 0,
+        voice: 0,
         open: function (callback) {
             const loading = layui.layer.load(0);
             layui.$.get('api/credentials', function (data) {
-                $tts.ws = new WebSocket(`${$tts.url}?access_token=${data}&per=${$tts.per}`);
+                $tts.ws = new WebSocket(`${$tts.url}?access_token=${data}&per=${$tts.voice}`);
                 $tts.ws.onopen = function () {
                     $tts.start();
                 };
@@ -29,7 +29,9 @@ layui.define(function (exports) {
                 $tts.ws.onmessage = function (e) {
                     console.log(e.data);
                     if (e.data instanceof Blob) {
-                        typeof callback === 'function' && callback(e.data);
+                        e.data.arrayBuffer().then(buffer => {
+                            typeof callback === 'function' && callback(buffer);
+                        });
                     } else {
                         const data = JSON.parse(e.data);
                         if (data.type === 'system.started' && data.code === 0) {

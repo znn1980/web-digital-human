@@ -1,39 +1,41 @@
 layui.define(function (exports) {
     const $tts = {
         ws: null,
-        nls: {
-            task_id: null,
-            app_key: '',
-            access_key_id: '',
-            access_key_secret: ''
-        },
+        task_id: null,
+        app_key: '',
+        access_key_id: '',
+        access_key_secret: '',
+        sound: [
+            {title: '小云', value: 'xiaoyun'},
+            {title: '小刚', value: 'xiaogang'}
+        ],
+        voice: 'xiaoyun',
         open: function (callback) {
             const loading = layui.layer.load(0);
-            layui.$.get(`http://nls-meta.cn-shanghai.aliyuncs.com/?${$tts.sign()}`, function (data) {
+            layui.$.get(`https://nls-meta.cn-shanghai.aliyuncs.com/?${$tts.sign()}`, function (data) {
                 console.log(data);
                 $tts.ws = new WebSocket(`wss://nls-gateway-cn-beijing.aliyuncs.com/ws/v1?token=${data.Token.Id}`);
                 $tts.ws.binaryType = "arraybuffer";
                 $tts.ws.onopen = function () {
                     if ($tts.ws.readyState === WebSocket.OPEN) {
-                        $tts.nls.task_id = $tts.uuid();
+                        $tts.task_id = $tts.uuid();
                         $tts.start();
                     }
                 };
                 $tts.ws.onclose = function () {
                     layui.layer.close(loading);
-                    console.log('WebSocket关闭！');
+                    console.log('WebSocket关闭！！！');
                     $tts.ws = null;
                 };
                 $tts.ws.onerror = function () {
                     layui.layer.close(loading);
-                    layui.layer.msg('语音合成失败！（WebSocket）');
+                    layui.layer.msg('语音合成失败！！！（WebSocket）');
                     $tts.ws = null;
                 };
                 $tts.ws.onmessage = function (e) {
                     console.log(e.data);
                     if (e.data instanceof ArrayBuffer) {
-                        const blob = new Blob([e.data]);
-                        typeof callback === 'function' && callback(blob);
+                        typeof callback === 'function' && callback(e.data);
                     } else {
                         const data = JSON.parse(e.data);
                         if (data.header.name === 'SynthesisStarted' && data.header.status === 20000000) {
@@ -70,7 +72,7 @@ layui.define(function (exports) {
         },
         sign: function () {
             const params = [
-                `AccessKeyId=${$tts.nls.access_key_id}`,
+                `AccessKeyId=${$tts.access_key_id}`,
                 '&Action=CreateToken',
                 '&Format=JSON',
                 '&RegionId=cn-shanghai',
@@ -83,7 +85,7 @@ layui.define(function (exports) {
 
             let sign = params.join('');
             sign = `GET&${encodeURIComponent('/')}&${encodeURIComponent(sign)}`;
-            sign = CryptoJS.HmacSHA1(sign, $tts.nls.access_key_secret + '&');
+            sign = CryptoJS.HmacSHA1(sign, $tts.access_key_secret + '&');
             sign = CryptoJS.enc.Base64.stringify(sign);
             sign = `Signature=${encodeURIComponent(sign)}&${params.join('')}`;
             return sign;
@@ -91,10 +93,10 @@ layui.define(function (exports) {
         header: function (name) {
             return {
                 message_id: $tts.uuid(),
-                task_id: $tts.nls.task_id,
+                task_id: $tts.task_id,
                 namespace: 'FlowingSpeechSynthesizer',
                 name: name,
-                appkey: $tts.nls.app_key
+                appkey: $tts.app_key
             };
         },
         //voice【发音人，默认是xiaoyun。】
@@ -103,10 +105,13 @@ layui.define(function (exports) {
         //volume【音量，取值范围：0～100。默认值：50。】
         //speech_rate【语速，取值范围：-500～500，默认值：0。】
         //pitch_rate【语调，取值范围：-500～500，默认值：0。】
-        payload: {voice: 'xiaoyun', format: 'PCM', sample_rate: 16000, volume: 100, speech_rate: 0, pitch_rate: 0},
+        payload: {format: 'PCM', sample_rate: 16000, volume: 100, speech_rate: 0, pitch_rate: 0},
         start: function () {
             if ($tts.ws) {
-                $tts.ws.send(JSON.stringify({header: $tts.header('StartSynthesis'), payload: $tts.payload}));
+                $tts.ws.send(JSON.stringify({
+                    header: $tts.header('StartSynthesis'),
+                    payload: {...$tts.payload, voice: $tts.voice}
+                }));
             }
         },
         stop: function () {
