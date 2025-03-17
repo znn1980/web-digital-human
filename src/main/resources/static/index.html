@@ -107,9 +107,6 @@
         }, function () {
             this.onPause();
             layui.human.standby();
-            if (layui.tts.ws) {
-                layui.tts.ws.close();
-            }
         });
         layui.human.init();
         layui.dropdown.render({
