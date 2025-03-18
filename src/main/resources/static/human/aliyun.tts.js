@@ -9,9 +9,9 @@ layui.define(function (exports) {
         voice: 'xiaoyun',
         open: function (callback) {
             const loading = layui.layer.load(0);
-            layui.$.get('aliyun/nls-meta/token', function (data) {
+            layui.$.get('aliyun/token', function (data) {
                 console.log(data);
-                $tts.ws = new WebSocket(`wss://nls-gateway-cn-beijing.aliyuncs.com/ws/v1?token=${data.Token.Id}`);
+                $tts.ws = new WebSocket(`wss://nls-gateway-cn-beijing.aliyuncs.com/ws/v1?token=${data}`);
                 $tts.ws.binaryType = "arraybuffer";
                 $tts.ws.onopen = function () {
                     if ($tts.ws.readyState === WebSocket.OPEN) {
@@ -53,13 +53,13 @@ layui.define(function (exports) {
             });
         },
         uuid: function () {
-            let d = Date.now();
+            let d1 = Date.now();
             let d2 = (performance && performance.now && (performance.now() * 1000)) || 0;
             return 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
                 let r = Math.random() * 16; //random number between 0 and 16
-                if (d > 0) {
-                    r = (d + r) % 16 | 0;
-                    d = Math.floor(d / 16);
+                if (d1 > 0) {
+                    r = (d1 + r) % 16 | 0;
+                    d1 = Math.floor(d1 / 16);
                 } else {
                     r = (d2 + r) % 16 | 0;
                     d2 = Math.floor(d2 / 16);

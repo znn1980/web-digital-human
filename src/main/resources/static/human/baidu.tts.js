@@ -1,7 +1,6 @@
 layui.define(function (exports) {
     const $tts = {
         ws: null,
-        url: 'wss://aip.baidubce.com/ws/2.0/speech/publiccloudspeech/v1/tts',
         sound: [
             {title: '度小美', value: 0},
             {title: '度小宇', value: 1},
@@ -12,7 +11,7 @@ layui.define(function (exports) {
         open: function (callback) {
             const loading = layui.layer.load(0);
             layui.$.get('api/credentials', function (data) {
-                $tts.ws = new WebSocket(`${$tts.url}?access_token=${data}&per=${$tts.voice}`);
+                $tts.ws = new WebSocket(`wss://aip.baidubce.com/ws/2.0/speech/publiccloudspeech/v1/tts?access_token=${data}&per=${$tts.voice}`);
                 $tts.ws.onopen = function () {
                     $tts.start();
                 };

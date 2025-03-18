@@ -51,6 +51,7 @@ public class HumanController {
     private final QianfanV2 client;
     private final CloseableHttpClient httpClient;
     private final Credentials credentials = new Credentials();
+    private final Token token = new Token();
 
     public HumanController(HumanProperties properties, Gson gson, Qianfan client, CloseableHttpClient httpClient) {
         this.properties = properties;
@@ -64,6 +65,13 @@ public class HumanController {
     public String credentials() throws IOException {
         this.refreshCredentials();
         return this.credentials.getAccessToken();
+    }
+
+    @GetMapping(value = "/aliyun/token", produces = MediaType.TEXT_PLAIN_VALUE)
+    @ResponseBody
+    public String token() throws IOException {
+        this.refreshToken();
+        return this.token.getId();
     }
 
     @PostMapping(value = "/api/speech/recognitions", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -155,37 +163,6 @@ public class HumanController {
         });
     }
 
-    @GetMapping(value = "/aliyun/nls-meta/token", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public String token() throws IOException {
-        BasicNameValuePair[] params = {
-                new BasicNameValuePair("AccessKeyId", this.properties.getAlibaba().getAliyun().getAccessKeyId()),
-                new BasicNameValuePair("Action", "CreateToken"),
-                new BasicNameValuePair("Format", "JSON"),
-                new BasicNameValuePair("RegionId", "cn-shanghai"),
-                new BasicNameValuePair("SignatureMethod", "HMAC-SHA1"),
-                new BasicNameValuePair("SignatureNonce", UUID.randomUUID().toString()),
-                new BasicNameValuePair("SignatureVersion", "1.0"),
-                new BasicNameValuePair("Timestamp", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") {{
-                    this.setTimeZone(new SimpleTimeZone(0, "GMT"));
-                }}.format(new Date())),
-                new BasicNameValuePair("Version", "2019-02-28"),
-        };
-        StringJoiner sign = new StringJoiner("&");
-        for (BasicNameValuePair param : params) {
-            sign.add(String.format("%s=%s", param.getName(), URLEncoder.encode(param.getValue(), "UTF-8")));
-        }
-        return this.httpClient.execute(ClassicRequestBuilder.get("https://nls-meta.cn-shanghai.aliyuncs.com/")
-                .addParameter("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1"
-                        , String.format("%s&", this.properties.getAlibaba().getAliyun().getAccessKeySecret()))
-                        .hmac(String.format("GET&%s&%s", URLEncoder.encode("/", "UTF-8")
-                                , URLEncoder.encode(sign.toString(), "UTF-8")))))
-                .addParameters(params).build(), response -> {
-            String json = EntityUtils.toString(response.getEntity());
-            LOGGER.info("NLS-META：{}", json);
-            return json;
-        });
-    }
 
     void refreshCredentials() throws IOException {
         if (!StringUtils.hasText(this.credentials.getAccessToken())
@@ -197,34 +174,14 @@ public class HumanController {
                 LOGGER.info("TOKEN：{}", json);
                 return this.gson.fromJson(json, Credentials.class);
             });
-            this.credentials.setError(credentials.getError());
-            this.credentials.setErrorDescription(credentials.getErrorDescription());
             this.credentials.setAccessToken(credentials.getAccessToken());
             this.credentials.setExpiresIn(System.currentTimeMillis() + credentials.getExpiresIn() * 1000);
         }
     }
 
     static class Credentials {
-        private String error;
-        private String errorDescription;
         private String accessToken;
         private long expiresIn;
-
-        public String getError() {
-            return error;
-        }
-
-        public void setError(String error) {
-            this.error = error;
-        }
-
-        public String getErrorDescription() {
-            return errorDescription;
-        }
-
-        public void setErrorDescription(String errorDescription) {
-            this.errorDescription = errorDescription;
-        }
 
         public String getAccessToken() {
             return accessToken;
@@ -240,6 +197,66 @@ public class HumanController {
 
         public void setExpiresIn(long expiresIn) {
             this.expiresIn = expiresIn;
+        }
+    }
+
+    void refreshToken() throws IOException {
+        if (!StringUtils.hasText(this.token.getId())
+                || this.token.getExpireTime() < System.currentTimeMillis()) {
+            BasicNameValuePair[] params = {
+                    new BasicNameValuePair("AccessKeyId", this.properties.getAlibaba().getAliyun().getAccessKeyId()),
+                    new BasicNameValuePair("Action", "CreateToken"),
+                    new BasicNameValuePair("Format", "JSON"),
+                    new BasicNameValuePair("RegionId", "cn-shanghai"),
+                    new BasicNameValuePair("SignatureMethod", "HMAC-SHA1"),
+                    new BasicNameValuePair("SignatureNonce", UUID.randomUUID().toString()),
+                    new BasicNameValuePair("SignatureVersion", "1.0"),
+                    new BasicNameValuePair("Timestamp", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") {{
+                        this.setTimeZone(new SimpleTimeZone(0, "GMT"));
+                    }}.format(new Date())),
+                    new BasicNameValuePair("Version", "2019-02-28"),
+            };
+            StringJoiner sign = new StringJoiner("&");
+            for (BasicNameValuePair param : params) {
+                sign.add(String.format("%s=%s", param.getName(), URLEncoder.encode(param.getValue(), "UTF-8")));
+            }
+            Token token = this.httpClient.execute(ClassicRequestBuilder.get("https://nls-meta.cn-shanghai.aliyuncs.com/")
+                    .addParameter("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1"
+                            , String.format("%s&", this.properties.getAlibaba().getAliyun().getAccessKeySecret()))
+                            .hmac(String.format("GET&%s&%s", URLEncoder.encode("/", "UTF-8")
+                                    , URLEncoder.encode(sign.toString(), "UTF-8")))))
+                    .addParameters(params).build(), response -> {
+                String json = EntityUtils.toString(response.getEntity());
+                LOGGER.info("TOKEN：{}", json);
+                return this.gson.fromJson(json, Token.class);
+            });
+            this.token.setId(token.getId());
+            this.token.setExpireTime(token.getExpireTime() * 1000);
+        }
+    }
+
+    static class Token {
+        public _Token token = new _Token();
+
+        public String getId() {
+            return this.token.id;
+        }
+
+        public void setId(String id) {
+            this.token.id = id;
+        }
+
+        public long getExpireTime() {
+            return this.token.expireTime;
+        }
+
+        public void setExpireTime(long expireTime) {
+            this.token.expireTime = expireTime;
+        }
+
+        static class _Token {
+            public String id;
+            public long expireTime;
         }
     }
 }
