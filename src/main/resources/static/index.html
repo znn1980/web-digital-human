@@ -101,7 +101,7 @@
         tts: '{/}human/aliyun.tts',
         asr: '{/}human/baidu.asr'
     }).use(['human', 'tts', 'asr'], function () {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioContext = new AudioContext();
         const audioRecorder = new AudioRecorder(audioContext);
         const audioPlayer = new AudioPlayer(audioContext
             , function () {

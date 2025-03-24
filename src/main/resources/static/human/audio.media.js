@@ -1,3 +1,7 @@
+const AudioContext = function () {
+    return new (window.AudioContext || window.webkitAudioContext)();
+};
+
 const AudioPlayer = function (audioContext, onPlay, onDone) {
     this.audioContext = audioContext;
     this.onPlay = onPlay;
