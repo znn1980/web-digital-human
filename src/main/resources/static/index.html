@@ -89,8 +89,7 @@
     </style>
 </head>
 <body>
-<script src="human/audio.player.js"></script>
-<script src="human/audio.recorder.js"></script>
+<script src="human/audio.media.js"></script>
 <script src="human/marked.min.js"></script>
 <script src="layui/layui.js"></script>
 <script>
@@ -99,15 +98,19 @@
         version: Date.now()
     }).extend({
         human: '{/}human/human',
-        tts: '{/}human/aliyun.tts'
-    }).use(['human', 'tts'], function () {
-        const audioRecorder = new Recorder({sampleRate: 16000, sampleBits: 16, numChannels: 1});
-        const audioPlayer = new AudioPlayer(16000, function () {
-            layui.human.speak();
-        }, function () {
-            this.onPause();
-            layui.human.standby();
-        });
+        tts: '{/}human/aliyun.tts',
+        asr: '{/}human/baidu.asr'
+    }).use(['human', 'tts', 'asr'], function () {
+        const audioRecorder = new AudioRecorder(16000);
+        const audioPlayer = new AudioPlayer(16000
+            , function () {
+                layui.human.speak();
+            }
+            , function () {
+                this.onPause();
+                layui.human.standby();
+            });
+
         layui.human.init();
         layui.dropdown.render({
             elem: '#set',
@@ -164,34 +167,30 @@
                 return;
             }
             const duration = 30;
-            Recorder.getPermission().then(function () {
+            audioRecorder.open().then(function (stream) {
                 console.log('开始录音...');
-                audioRecorder.start().then(function () {
-                    const loading = layui.layer.msg('录音中...', {
-                        time: 0, icon: 16, shade: 0.3, shadeClose: true,
-                        content: '<span id="loading">录音中...（30秒）<span>',
-                        end: function () {
-                            console.log('停止录音...');
-                            const blob = audioRecorder.getPCMBlob();
-                            layui.human.asr(blob, function (text) {
-                                if (text && text !== '') {
-                                    layui.$('#text').val(text);
-                                    layui.$('#release').trigger('click');
-                                } else {
-                                    layui.layer.msg('我没有听清你在说些什么！');
-                                }
-                            });
-                        }
-                    });
-                    audioRecorder.onprogress = function (params) {
-                        console.log(params);
-                        layui.$('#loading').html('录音中...（' + (duration - parseInt(params.duration)) + '秒）按下停止');
-                        if (params.duration > duration) {
-                            layui.layer.close(loading);
-                        }
-                    };
-                }, function (error) {
-                    layui.layer.msg(`麦克风打开失败！（${error.name}:${error.message}）`);
+                const loading = layui.layer.msg('录音中...', {
+                    time: 0, icon: 16, shade: 0.3, shadeClose: true,
+                    content: '<span id="loading">录音中...（30秒）<span>',
+                    end: function () {
+                        console.log('停止录音...');
+                        const blob = audioRecorder.pcm();
+                        layui.asr.asr(blob, function (text) {
+                            if (text && text !== '') {
+                                layui.$('#text').val(text);
+                                layui.$('#release').trigger('click');
+                            } else {
+                                layui.layer.msg('我没有听清你在说些什么！');
+                            }
+                        });
+                    }
+                });
+                audioRecorder.start(stream, function (params) {
+                    console.log(params);
+                    layui.$('#loading').html('录音中...（' + (duration - parseInt(params.duration)) + '秒）按下停止');
+                    if (params.duration > duration) {
+                        layui.layer.close(loading);
+                    }
                 });
             }, function (error) {
                 layui.layer.msg(`麦克风打开失败！（${error.name}:${error.message}）`);

@@ -50,6 +50,31 @@ layui.define(function (exports) {
             if ($asr.ws) {
                 $asr.ws.send(buffer);
             }
+        },
+        asr: function (blob, callback) {
+            const loading = layui.layer.load(0);
+            const reader = new FileReader();
+            reader.onload = function () {
+                console.log(reader.result);
+                const data = encodeURIComponent(reader.result.split(',')[1]);
+                layui.$.post('api/speech/recognitions', data, function (data) {
+                    console.log(data);
+                    if (data.err_no !== 0) {
+                        layui.layer.msg('语音识别失败！（' + data.err_no + ':' + data.err_msg + '）');
+                    } else {
+                        typeof callback === 'function' && callback(data.result[0]);
+                    }
+                    layui.layer.close(loading);
+                }).error(function (xhr, status, error) {
+                    layui.layer.close(loading);
+                    layui.layer.msg('语音识别请求异常，请重试！（' + (error || status) + '）');
+                });
+            };
+            reader.onerror = function () {
+                layui.layer.close(loading);
+                layui.layer.msg('读取录音文件失败！（' + reader.error + '）');
+            };
+            reader.readAsDataURL(blob);
         }
     };
     exports('asr', $asr);

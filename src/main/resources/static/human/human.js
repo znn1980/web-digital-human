@@ -149,6 +149,24 @@ layui.define(function (exports) {
             }
             $human.id.speak = requestAnimationFrame($human._speak);
         },
+        chat: function (text, uuid) {
+            if (layui.$(`#CHAT-${uuid}`).length > 0) {
+                layui.$(`#CHAT-${uuid}`).html(text);
+            } else {
+                const ymd = layui.util.toDateString(Date.now(), 'yyyy-MM-dd HH:mm:ss');
+                layui.$('.layim-chat-main').children().append([
+                    '<li class="' + (uuid ? '' : 'layim-chat-role-user') + '">',
+                    ' <div class="layim-chat-userinfo">',
+                    '  <img src="' + (uuid ? `${$human.me.value}/me.png` : 'logo.png') + '" alt="">',
+                    '  <cite>' + (uuid ? `${$human.me.title}<i>${ymd}</i>` : `<i>${ymd}</i>我`) + '</cite>',
+                    ' </div>',
+                    ' <div id="CHAT-' + (uuid || Date.now()) + '" class="layim-chat-text layui-text">' + text + '</div>',
+                    '</li>'
+                ].join(''));
+            }
+            const dom = document.querySelector('.layim-chat-main');
+            dom.scrollTop = dom.scrollHeight;
+        },
         //说话
         send: function (text, callback) {
             $human.request.messages.push({role: 'user', content: text});
@@ -198,50 +216,6 @@ layui.define(function (exports) {
                 }
                 typeof callback === 'function' && callback(done, text.join(''));
             });
-        },
-        //语音转文字
-        asr: function (blob, callback) {
-            const loading = layui.layer.load(0);
-            const reader = new FileReader();
-            reader.onload = function () {
-                console.log(reader.result);
-                const data = encodeURIComponent(reader.result.split(',')[1]);
-                layui.$.post('api/speech/recognitions', data, function (data) {
-                    console.log(data);
-                    if (data.err_no !== 0) {
-                        layui.layer.msg('语音识别失败！（' + data.err_no + ':' + data.err_msg + '）');
-                    } else {
-                        typeof callback === 'function' && callback(data.result[0]);
-                    }
-                    layui.layer.close(loading);
-                }).error(function (xhr, status, error) {
-                    layui.layer.close(loading);
-                    layui.layer.msg('语音识别请求异常，请重试！（' + (error || status) + '）');
-                });
-            };
-            reader.onerror = function () {
-                layui.layer.close(loading);
-                layui.layer.msg('读取录音文件失败！（' + reader.error + '）');
-            };
-            reader.readAsDataURL(blob);
-        },
-        chat: function (text, uuid) {
-            if (layui.$(`#CHAT-${uuid}`).length > 0) {
-                layui.$(`#CHAT-${uuid}`).html(text);
-            } else {
-                const ymd = layui.util.toDateString(Date.now(), 'yyyy-MM-dd HH:mm:ss');
-                layui.$('.layim-chat-main').children().append([
-                    '<li class="' + (uuid ? '' : 'layim-chat-role-user') + '">',
-                    ' <div class="layim-chat-userinfo">',
-                    '  <img src="' + (uuid ? `${$human.me.value}/me.png` : 'logo.png') + '" alt="">',
-                    '  <cite>' + (uuid ? `${$human.me.title}<i>${ymd}</i>` : `<i>${ymd}</i>我`) + '</cite>',
-                    ' </div>',
-                    ' <div id="CHAT-' + (uuid || Date.now()) + '" class="layim-chat-text layui-text">' + text + '</div>',
-                    '</li>'
-                ].join(''));
-            }
-            const dom = document.querySelector('.layim-chat-main');
-            dom.scrollTop = dom.scrollHeight;
         }
     };
     exports('human', $human);

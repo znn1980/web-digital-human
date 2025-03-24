@@ -8,6 +8,7 @@ import com.baidubce.qianfan.model.chat.v2.request.RequestV2;
 import com.baidubce.qianfan.model.chat.v2.response.ResponseV2;
 import com.baidubce.qianfan.model.chat.v2.response.StreamResponseV2;
 import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.hc.client5.http.entity.EntityBuilder;
@@ -180,7 +181,9 @@ public class HumanController {
     }
 
     static class Credentials {
+        @SerializedName("access_token")
         private String accessToken;
+        @SerializedName("expires_in")
         private long expiresIn;
 
         public String getAccessToken() {
@@ -236,6 +239,7 @@ public class HumanController {
     }
 
     static class Token {
+        @SerializedName("Token")
         public _Token token = new _Token();
 
         public String getId() {
@@ -255,7 +259,9 @@ public class HumanController {
         }
 
         static class _Token {
+            @SerializedName("Id")
             public String id;
+            @SerializedName("ExpireTime")
             public long expireTime;
         }
     }
