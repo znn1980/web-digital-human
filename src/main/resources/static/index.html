@@ -101,8 +101,9 @@
         tts: '{/}human/aliyun.tts',
         asr: '{/}human/baidu.asr'
     }).use(['human', 'tts', 'asr'], function () {
-        const audioRecorder = new AudioRecorder(16000);
-        const audioPlayer = new AudioPlayer(16000
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioRecorder = new AudioRecorder(audioContext);
+        const audioPlayer = new AudioPlayer(audioContext
             , function () {
                 layui.human.speak();
             }

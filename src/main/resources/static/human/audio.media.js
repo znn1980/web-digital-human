@@ -1,32 +1,26 @@
-const AudioPlayer = function (sampleRate, onPlay, onDone) {
-    this.audioContext = null;
-    this.bufferSource = null;
-    this.sampleRate = sampleRate;
+const AudioPlayer = function (audioContext, onPlay, onDone) {
+    this.audioContext = audioContext;
     this.onPlay = onPlay;
     this.onDone = onDone;
+    this.bufferSource = null;
     this.audioQueue = [];
     this.isPlaying = false;
     this.isDoneing = true;
 
     this.onPause = function () {
         this.bufferSource && this.bufferSource.stop();
-        this.audioContext && this.audioContext.close && this.audioContext.close();
-        this.audioContext = null;
         this.audioQueue = [];
         this.isPlaying = false;
         this.isDoneing = true;
     };
     this.onPush = function (buffer) {
-        if (!this.audioContext) {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
         this.audioQueue.push(buffer);
         this.onPlayNextAudio();
     };
     //将arrayBuffer转为audioBuffer
     this.onBufferPCMData = function (buffer) {
         const length = buffer.byteLength / 2; // 假设 PCM 数据为 16 位，需除以 2
-        const audioBuffer = this.audioContext.createBuffer(1, length, this.sampleRate);
+        const audioBuffer = this.audioContext.createBuffer(1, length, 16000);
         const channelData = audioBuffer.getChannelData(0);
         const bufferArray = new Int16Array(buffer);// 将 PCM 数据转换为 Int16Array
         for (let i = 0; i < length; i++) {
@@ -79,12 +73,11 @@ const AudioPlayer = function (sampleRate, onPlay, onDone) {
     };
 };
 
-const AudioRecorder = function (sampleRate) {
-    this.audioContext = null;
+const AudioRecorder = function (audioContext) {
+    this.audioContext = audioContext;
     this.mediaStreamSource = null;
     this.scriptProcessor = null;
     this.mediaStream = null;
-    this.sampleRate = sampleRate;
     this.buffer = [];
     this.duration = 0;
     this.size = 0;
@@ -98,11 +91,9 @@ const AudioRecorder = function (sampleRate) {
         }
         return Promise.reject(new Error('浏览器不支持麦克风！'));
     };
-    this.start = function (mediaStream, onProcess) {
+    this.start = function (mediaStream, _onProcess) {
         this.clear();
         this.mediaStream = mediaStream;
-        this.audioContext && this.audioContext.close && this.audioContext.close();
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.mediaStreamSource = this.audioContext.createMediaStreamSource(mediaStream);
         this.scriptProcessor = (this.audioContext.createScriptProcessor || this.audioContext.createJavaScriptNode)
             .apply(this.audioContext, [4096, 1, 1]);
@@ -110,7 +101,7 @@ const AudioRecorder = function (sampleRate) {
             const data = event.inputBuffer.getChannelData(0);
             this.buffer.push(new Float32Array(data));
             this.size += data.length;
-            this.duration += 4096 / this.sampleRate;
+            this.duration += 4096 / 16000;
             this.vol = Math.max.apply(Math, data) * 100;
             const params = {
                 data: data,
@@ -118,7 +109,7 @@ const AudioRecorder = function (sampleRate) {
                 size: this.size,
                 duration: this.duration
             };
-            typeof onProcess === 'function' && onProcess(params) && this.onProcess(params);
+            (typeof _onProcess === 'function' && _onProcess(params)) || this.onProcess(params);
         };
         this.mediaStreamSource.connect(this.scriptProcessor);
         this.scriptProcessor.connect(this.audioContext.destination);
@@ -127,8 +118,6 @@ const AudioRecorder = function (sampleRate) {
         this.scriptProcessor && this.scriptProcessor.disconnect();
         this.mediaStreamSource && this.mediaStreamSource.disconnect();
         this.mediaStream && this.mediaStream.getTracks().forEach(track => track.stop());
-        this.audioContext && this.audioContext.close && this.audioContext.close();
-        this.audioContext = null;
     };
     this.clear = function () {
         this.vol = 0;
@@ -143,7 +132,7 @@ const AudioRecorder = function (sampleRate) {
             data.set(this.buffer[i], offset);
             offset += this.buffer[i].length;
         }
-        const compression = 48000 / this.sampleRate
+        const compression = 48000 / 16000;
         const length = data.length / compression;
         const result = new Float32Array(length);
         let index = 0, j = 0;
