@@ -8,24 +8,20 @@
 ```
 human:
   baidu:
-    api-key: ************************
+    api-key: ************************  
     secret-key: ********************************
-```
-> 项目中使用的对话是[千帆大模型](https://qianfan.cloud.baidu.com/)的产品，需要申请对应的[API Key](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Um2wxbaps)。
-```
-human:
-  baidu:
-    qianfan:
-      api-key: ***************************************************************************
-      access-key: ********************************
-      secret-key: ********************************
 ```
 > 项目中包含一个通用的对话接口,您可以使用所有厂家符合OpenAI接口规范的产品，如：[DeepSeek](https://www.deepseek.com)等。
 ```
 human:
-  openai:
-    base-url: https://api.deepseek.com
+  chat:
     api-key: ********************************
+    base-url: https://qianfan.baidubce.com/v2
+    models:
+      - title: DeepSeek-V3
+        value: deepseek-v3
+      - title: DeepSeek-R1
+        value: deepseek-r1
 ```
 > 在网页使用麦克风录音时需使用HTTPS安全协议。  
 > 项目自带一个测试用的证书，您在使用中可以替换成您的证书或关闭server.ssl.enabled=false使用Nginx代理。
@@ -49,7 +45,7 @@ server:
 [长文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/ulbxh8rbu)  
 [流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)  
 
-## 千帆大模型
+## 对话Chat
 
-[对话Chat](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/om5aq2brc)  
-[对话Chat V2](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/em4tsqo3v)  
+[千帆大模型](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu)  
+[DeepSeek](https://api-docs.deepseek.com/zh-cn/guides/multi_round_chat)  

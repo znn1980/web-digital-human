@@ -2,17 +2,17 @@ human:
   baidu:
     api-key:
     secret-key:
-    qianfan:
-      api-key:
-      access-key:
-      secret-key:
-  alibaba:
-    aliyun:
-      access-key-id:
-      access-key-secret:
-  openai:
-    base-url: https://api.deepseek.com
+  aliyun:
+    access-key-id:
+    access-key-secret:
+  chat:
     api-key:
+    base-url: https://qianfan.baidubce.com/v2
+    models:
+      - title: DeepSeek-V3
+        value: deepseek-v3
+      - title: DeepSeek-R1
+        value: deepseek-r1
 
 server:
   port: 8080

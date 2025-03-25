@@ -34,12 +34,9 @@ layui.define(function (exports) {
             {title: '场景7', value: 'human/background/bg_7.png'}
         ],
         //大模型
-        model: [
-            {title: 'DeepSeek-V3', value: 'deepseek-v3'},
-            {title: 'DeepSeek-R1', value: 'deepseek-r1'}
-        ],
+        model: [],
         //大模型请求
-        request: {model: 'deepseek-v3', stream: true, messages: []},
+        request: {model: '', stream: true, messages: []},
         //大模型应答
         response: {messages: []},
         //初始化画布，并加载第一个数字人形象
@@ -215,6 +212,15 @@ layui.define(function (exports) {
                     $human.stream(reader, callback);
                 }
                 typeof callback === 'function' && callback(done, text.join(''));
+            });
+        },
+        models: function (callback) {
+            layui.$.get('chat/models', function (data) {
+                $human.model = data;
+                $human.request.model = data[0].value;
+                typeof callback === 'function' && callback();
+            }).error(function (xhr, status, error) {
+                layui.layer.msg('模型请求异常，请重试！（' + (error || status) + '）');
             });
         }
     };

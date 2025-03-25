@@ -1,21 +1,13 @@
 package web.digital.human;
 
-import com.baidubce.qianfan.Qianfan;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
-import org.apache.hc.client5.http.config.RequestConfig;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
-import org.apache.hc.core5.util.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +16,6 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -38,40 +29,6 @@ import java.time.Duration;
 @Component
 public class HumanComponent {
     private final static Logger LOGGER = LoggerFactory.getLogger(HumanComponent.class);
-    private final HumanProperties properties;
-
-    public HumanComponent(HumanProperties properties) {
-        this.properties = properties;
-    }
-
-    @Bean
-    public Gson gson() {
-        return new GsonBuilder().create();
-    }
-
-    @Bean
-    public Qianfan client() {
-        if (StringUtils.hasText(properties.getBaidu().getQianfan().getApiKey())) {
-            return new Qianfan(properties.getBaidu().getQianfan().getApiKey());
-        }
-        return new Qianfan(properties.getBaidu().getQianfan().getAccessKey()
-                , properties.getBaidu().getQianfan().getSecretKey());
-    }
-
-    @Bean
-    public CloseableHttpClient httpClients() {
-        return HttpClients.custom().useSystemProperties()
-                .setConnectionManager(new PoolingHttpClientConnectionManager() {{
-                    this.setMaxTotal(10);
-                    this.setDefaultMaxPerRoute(10);
-                }})
-                .setDefaultRequestConfig(RequestConfig.custom()
-                        .setConnectTimeout(Timeout.ofSeconds(10))
-                        .setConnectionRequestTimeout(Timeout.ofSeconds(10))
-                        .setConnectionRequestTimeout(Timeout.ofSeconds(10))
-                        .build())
-                .build();
-    }
 
     @Bean
     public ObjectMapper objectMapper() {
@@ -112,7 +69,6 @@ public class HumanComponent {
                 }))
                 .filter(ExchangeFilterFunction.ofResponseProcessor(processor -> {
                     LOGGER.info("Response status: {} headers: {}", processor.statusCode(), processor.headers().asHttpHeaders());
-
                     return Mono.just(processor);
                 }))
                 .build();

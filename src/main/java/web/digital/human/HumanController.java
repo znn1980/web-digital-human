@@ -1,9 +1,10 @@
 package web.digital.human;
 
-import com.baidubce.qianfan.model.chat.ChatRequest;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -28,11 +29,16 @@ public class HumanController {
         this.webClient = webClient;
     }
 
+    @GetMapping(value = "/chat/models", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<?> models() {
+        return this.properties.getChat().getModels();
+    }
+
     @PostMapping(value = "/chat/completions", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> chatCompletions(@RequestBody ChatRequest request) {
         return this.webClient.post()
-                .uri(properties.getOpenai().getBaseUrl() + "/chat/completions")
-                .header("Authorization", String.format("Bearer %s", properties.getOpenai().getApiKey()))
+                .uri(this.properties.getChat().getBaseUrl() + "/chat/completions")
+                .header("Authorization", String.format("Bearer %s", this.properties.getChat().getApiKey()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .bodyValue(request).retrieve().bodyToFlux(String.class);
@@ -77,6 +83,64 @@ public class HumanController {
         }
     }
 
+    void refreshToken() throws IOException {
+        if (!StringUtils.hasText(this.token.getId())
+                || this.token.getExpireTime() < System.currentTimeMillis()) {
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>() {{
+                this.add("AccessKeyId", properties.getAliyun().getAccessKeyId());
+                this.add("Action", "CreateToken");
+                this.add("Format", "JSON");
+                this.add("RegionId", "cn-shanghai");
+                this.add("SignatureMethod", "HMAC-SHA1");
+                this.add("SignatureNonce", UUID.randomUUID().toString());
+                this.add("SignatureVersion", "1.0");
+                this.add("Timestamp", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") {{
+                    this.setTimeZone(new SimpleTimeZone(0, "GMT"));
+                }}.format(new Date()));
+                this.add("Version", "2019-02-28");
+            }};
+            StringJoiner sign = new StringJoiner("&");
+            for (Map.Entry<String, String> param : params.toSingleValueMap().entrySet()) {
+                sign.add(String.format("%s=%s", param.getKey(), URLEncoder.encode(param.getValue(), "UTF-8")));
+            }
+            params.add("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1"
+                    , String.format("%s&", this.properties.getAliyun().getAccessKeySecret()))
+                    .hmac(String.format("GET&%s&%s", URLEncoder.encode("/", "UTF-8")
+                            , URLEncoder.encode(sign.toString(), "UTF-8")))));
+
+            Token token = this.webClient.get()
+                    .uri("https://nls-meta.cn-shanghai.aliyuncs.com/", uriBuilder -> uriBuilder.queryParams(params).build())
+                    .retrieve().bodyToMono(Token.class).block();
+            if (!ObjectUtils.isEmpty(token)) {
+                this.token.setId(token.getId());
+                this.token.setExpireTime(token.getExpireTime() * 1000);
+            }
+        }
+    }
+
+    static class ChatRequest {
+        public String model;
+        public boolean stream;
+        public List<Message> messages;
+
+        public ChatRequest() {
+
+            this.model = null;
+            this.stream = false;
+            this.messages = null;
+        }
+
+        static class Message {
+            public String role;
+            public String content;
+
+            public Message() {
+                this.role = null;
+                this.content = null;
+            }
+        }
+    }
+
     static class Credentials {
         private String accessToken;
         private long expiresIn;
@@ -95,42 +159,6 @@ public class HumanController {
 
         public void setExpiresIn(long expiresIn) {
             this.expiresIn = expiresIn;
-        }
-    }
-
-    void refreshToken() throws IOException {
-        if (!StringUtils.hasText(this.token.getId())
-                || this.token.getExpireTime() < System.currentTimeMillis()) {
-            Map<String, String> variables = new LinkedHashMap<String, String>() {{
-                this.put("AccessKeyId", properties.getAlibaba().getAliyun().getAccessKeyId());
-                this.put("Action", "CreateToken");
-                this.put("Format", "JSON");
-                this.put("RegionId", "cn-shanghai");
-                this.put("SignatureMethod", "HMAC-SHA1");
-                this.put("SignatureNonce", UUID.randomUUID().toString());
-                this.put("SignatureVersion", "1.0");
-                this.put("Timestamp", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") {{
-                    this.setTimeZone(new SimpleTimeZone(0, "GMT"));
-                }}.format(new Date()));
-                this.put("Version", "2019-02-28");
-            }};
-            StringJoiner sign = new StringJoiner("&");
-            for (Map.Entry<String, String> variable : variables.entrySet()) {
-                sign.add(String.format("%s=%s", variable.getKey(), URLEncoder.encode(variable.getValue(), "UTF-8")));
-            }
-            variables.put("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1"
-                    , String.format("%s&", this.properties.getAlibaba().getAliyun().getAccessKeySecret()))
-                    .hmac(String.format("GET&%s&%s", URLEncoder.encode("/", "UTF-8")
-                            , URLEncoder.encode(sign.toString(), "UTF-8")))));
-
-            Token token = this.webClient.get().uri("https://nls-meta.cn-shanghai.aliyuncs.com/" +
-                            "?AccessKeyId={AccessKeyId}&Action={Action}&Format={Format}&RegionId={RegionId}&SignatureMethod={SignatureMethod}" +
-                            "&SignatureNonce={SignatureNonce}&SignatureVersion={SignatureVersion}&Timestamp={Timestamp}&Version={Version}&Signature={Signature}", variables)
-                    .retrieve().bodyToMono(Token.class).block();
-            if (!ObjectUtils.isEmpty(token)) {
-                this.token.setId(token.getId());
-                this.token.setExpireTime(token.getExpireTime() * 1000);
-            }
         }
     }
 

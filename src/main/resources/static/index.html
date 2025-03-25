@@ -101,9 +101,9 @@
         tts: '{/}human/aliyun.tts',
         asr: '{/}human/baidu.asr'
     }).use(['human', 'tts', 'asr'], function () {
-        //const audioContext = new AudioContext();
-        const audioRecorder = new AudioRecorder(null);
-        const audioPlayer = new AudioPlayer(null
+        const audioOptions = {sampleRate: 16000, sampleBits: 16, numberChannels: 1};
+        const audioRecorder = new AudioRecorder(audioOptions);
+        const audioPlayer = new AudioPlayer(audioOptions
             , function () {
                 layui.human.speak();
             }
@@ -113,37 +113,39 @@
             });
 
         layui.human.init();
-        layui.dropdown.render({
-            elem: '#set',
-            data: [
-                {title: '场景', child: layui.human.scene},
-                {title: '形象', child: layui.human.human},
-                {title: '模型', child: layui.human.model},
-                {title: '音库', child: layui.tts.sound}
-            ],
-            click: function (data) {
-                layui.human.scene.forEach(function (value) {
-                    if (data.title === value.title) {
-                        layui.$('body').css('background', `url(${data.value}) no-repeat center center`);
-                        layui.$('body').css('background-size', 'cover');
-                    }
-                });
-                layui.human.human.forEach(function (value, index) {
-                    if (data.title === value.title) {
-                        layui.human.load(layui.human.human[index]);
-                    }
-                });
-                layui.human.model.forEach(function (value, index) {
-                    if (data.title === value.title) {
-                        layui.human.request.model = layui.human.model[index].value;
-                    }
-                });
-                layui.tts.sound.forEach(function (value, index) {
-                    if (data.title === value.title) {
-                        layui.tts.voice = layui.tts.sound[index].value;
-                    }
-                });
-            }
+        layui.human.models(function () {
+            layui.dropdown.render({
+                elem: '#set',
+                data: [
+                    {title: '场景', child: layui.human.scene},
+                    {title: '形象', child: layui.human.human},
+                    {title: '模型', child: layui.human.model},
+                    {title: '音库', child: layui.tts.sound}
+                ],
+                click: function (data) {
+                    layui.human.scene.forEach(function (value) {
+                        if (data.title === value.title) {
+                            layui.$('body').css('background', `url(${data.value}) no-repeat center center`);
+                            layui.$('body').css('background-size', 'cover');
+                        }
+                    });
+                    layui.human.human.forEach(function (value, index) {
+                        if (data.title === value.title) {
+                            layui.human.load(layui.human.human[index]);
+                        }
+                    });
+                    layui.human.model.forEach(function (value, index) {
+                        if (data.title === value.title) {
+                            layui.human.request.model = layui.human.model[index].value;
+                        }
+                    });
+                    layui.tts.sound.forEach(function (value, index) {
+                        if (data.title === value.title) {
+                            layui.tts.voice = layui.tts.sound[index].value;
+                        }
+                    });
+                }
+            });
         });
 
         layui.$('#canvas').on('click', function () {

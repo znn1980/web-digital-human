@@ -2,8 +2,9 @@ const AudioContext = function () {
     return new (window.AudioContext || window.webkitAudioContext)();
 };
 
-const AudioPlayer = function (audioContext, onPlay, onDone) {
-    this.audioContext = new AudioContext();
+const AudioPlayer = function (audioOptions, onPlay, onDone) {
+    this.audioOptions = audioOptions;
+    this.audioContext = null;
     this.onPlay = onPlay;
     this.onDone = onDone;
     this.bufferSource = null;
@@ -13,18 +14,21 @@ const AudioPlayer = function (audioContext, onPlay, onDone) {
 
     this.onPause = function () {
         this.bufferSource && this.bufferSource.stop();
+        this.audioContext && this.audioContext.close();
+        this.audioContext = null;
         this.audioQueue = [];
         this.isPlaying = false;
         this.isDoneing = true;
     };
     this.onPush = function (buffer) {
+        this.audioContext = this.audioContext || new AudioContext();
         this.audioQueue.push(buffer);
         this.onPlayNextAudio();
     };
     //将arrayBuffer转为audioBuffer
     this.onBufferPCMData = function (buffer) {
         const length = buffer.byteLength / 2; // 假设 PCM 数据为 16 位，需除以 2
-        const audioBuffer = this.audioContext.createBuffer(1, length, 16000);
+        const audioBuffer = this.audioContext.createBuffer(this.audioOptions.numberChannels, length, this.audioOptions.sampleRate);
         const channelData = audioBuffer.getChannelData(0);
         const bufferArray = new Int16Array(buffer);// 将 PCM 数据转换为 Int16Array
         for (let i = 0; i < length; i++) {
@@ -77,7 +81,8 @@ const AudioPlayer = function (audioContext, onPlay, onDone) {
     };
 };
 
-const AudioRecorder = function (audioContext) {
+const AudioRecorder = function (audioOptions) {
+    this.audioOptions = audioOptions;
     this.audioContext = null;
     this.mediaStreamSource = null;
     this.scriptProcessor = null;
@@ -97,16 +102,16 @@ const AudioRecorder = function (audioContext) {
     };
     this.start = function (mediaStream, _onProcess) {
         this.clear();
-        this.audioContext = new AudioContext();
+        this.audioContext = this.audioContext || new AudioContext();
         this.mediaStream = mediaStream;
         this.mediaStreamSource = this.audioContext.createMediaStreamSource(mediaStream);
         this.scriptProcessor = (this.audioContext.createScriptProcessor || this.audioContext.createJavaScriptNode)
-            .apply(this.audioContext, [4096, 1, 1]);
+            .apply(this.audioContext, [4096, this.audioOptions.numberChannels, this.audioOptions.numberChannels]);
         this.scriptProcessor.onaudioprocess = (event) => {
             const data = event.inputBuffer.getChannelData(0);
             this.buffer.push(new Float32Array(data));
             this.size += data.length;
-            this.duration += 4096 / 16000;
+            this.duration += 4096 / this.audioOptions.sampleRate;
             this.vol = Math.max.apply(Math, data) * 100;
             const params = {
                 data: data,
@@ -123,6 +128,8 @@ const AudioRecorder = function (audioContext) {
         this.scriptProcessor && this.scriptProcessor.disconnect();
         this.mediaStreamSource && this.mediaStreamSource.disconnect();
         this.mediaStream && this.mediaStream.getTracks().forEach(track => track.stop());
+        this.audioContext && this.audioContext.close();
+        this.audioContext = null;
     };
     this.clear = function () {
         this.vol = 0;
@@ -137,7 +144,7 @@ const AudioRecorder = function (audioContext) {
             data.set(this.buffer[i], offset);
             offset += this.buffer[i].length;
         }
-        const compression = 48000 / 16000;
+        const compression = this.audioContext.sampleRate / this.audioOptions.sampleRate;
         const length = data.length / compression;
         const result = new Float32Array(length);
         let index = 0, j = 0;
@@ -149,9 +156,8 @@ const AudioRecorder = function (audioContext) {
         return result;
     };
     this.pcm = function () {
-        this.stop();
         const data = this.compress();
-        this.clear();
+        this.stop();
         const dataView = new DataView(new ArrayBuffer(data.length * (16 / 8)));
         let offset = 0;
         for (let i = 0; i < data.length; i++, offset += 2) {
