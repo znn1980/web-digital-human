@@ -1,189 +1,84 @@
 package web.digital.human;
 
-import com.baidubce.qianfan.Qianfan;
-import com.baidubce.qianfan.QianfanV2;
-import com.baidubce.qianfan.core.StreamIterator;
 import com.baidubce.qianfan.model.chat.ChatRequest;
-import com.baidubce.qianfan.model.chat.v2.request.RequestV2;
-import com.baidubce.qianfan.model.chat.v2.response.ResponseV2;
-import com.baidubce.qianfan.model.chat.v2.response.StreamResponseV2;
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.HmacUtils;
-import org.apache.hc.client5.http.entity.EntityBuilder;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.ParseException;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
-import org.apache.hc.core5.http.message.BasicNameValuePair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.util.StreamUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-@Controller
+@RestController
 public class HumanController {
-    private final static Logger LOGGER = LoggerFactory.getLogger(HumanController.class);
-    private final static String ASR_URL = "https://vop.baidu.com/pro_api?token=%s&cuid=SC1234567890&dev_pid=80001";
-    private final static String TOKEN_URL = "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=%s&client_secret=%s";
     private final HumanProperties properties;
-    private final Gson gson;
-    private final QianfanV2 client;
-    private final CloseableHttpClient httpClient;
+    private final WebClient webClient;
     private final Credentials credentials = new Credentials();
     private final Token token = new Token();
 
-    public HumanController(HumanProperties properties, Gson gson, Qianfan client, CloseableHttpClient httpClient) {
+    public HumanController(HumanProperties properties, WebClient webClient) {
         this.properties = properties;
-        this.gson = gson;
-        this.client = client.v2();
-        this.httpClient = httpClient;
+        this.webClient = webClient;
     }
 
-    @GetMapping(value = "/api/credentials", produces = MediaType.TEXT_PLAIN_VALUE)
-    @ResponseBody
-    public String credentials() throws IOException {
-        this.refreshCredentials();
-        return this.credentials.getAccessToken();
+    @PostMapping(value = "/chat/completions", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> chatCompletions(@RequestBody ChatRequest request) {
+        return this.webClient.post()
+                .uri(properties.getOpenai().getBaseUrl() + "/chat/completions")
+                .header("Authorization", String.format("Bearer %s", properties.getOpenai().getApiKey()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .bodyValue(request).retrieve().bodyToFlux(String.class);
     }
 
-    @GetMapping(value = "/aliyun/token", produces = MediaType.TEXT_PLAIN_VALUE)
-    @ResponseBody
+    @GetMapping(value = "/aliyun/credentials", produces = MediaType.TEXT_PLAIN_VALUE)
     public String token() throws IOException {
         this.refreshToken();
         return this.token.getId();
     }
 
-    @PostMapping(value = "/api/speech/recognitions", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseBody
+    @GetMapping(value = "/baidu/credentials", produces = MediaType.TEXT_PLAIN_VALUE)
+    public String credentials() {
+        this.refreshCredentials();
+        return this.credentials.getAccessToken();
+    }
+
+    @PostMapping(value = "/baidu/speech/recognitions", produces = MediaType.APPLICATION_JSON_VALUE)
     public String speechRecognitions(@RequestBody String vop) throws IOException {
         this.refreshCredentials();
-        return this.httpClient.execute(ClassicRequestBuilder
-                .post(String.format(ASR_URL, this.credentials.getAccessToken()))
-                .addHeader("format", "pcm")
-                .addHeader("rate", "16000")
-                .setEntity(EntityBuilder.create()
-                        .setContentType(ContentType.create("audio/pcm"
-                                , new BasicNameValuePair("rate", "16000")))
-                        .setBinary(Base64.decodeBase64(URLDecoder.decode(vop, "UTF-8"))).build())
-                .build(), response -> {
-            String json = EntityUtils.toString(response.getEntity());
-            LOGGER.info("ASR：{}", json);
-            return json;
-        });
+        byte[] bytes = Base64.decodeBase64(URLDecoder.decode(vop, "UTF-8"));
+        return this.webClient.post()
+                .uri("https://vop.baidu.com/pro_api?token={0}&cuid=SC1234567890&dev_pid=80001"
+                        , this.credentials.getAccessToken())
+                .header("format", "pcm")
+                .header("rate", "16000")
+                .contentType(MediaType.parseMediaType("audio/pcm;rate=16000"))
+                .bodyValue(bytes).retrieve().bodyToMono(String.class).block();
     }
 
-    @PostMapping("/api/chat/completions")
-    public ResponseEntity<StreamingResponseBody> chatCompletions(@RequestBody RequestV2 request) {
-        LOGGER.info("问：{}", this.gson.toJson(request));
-        if (request.isStream()) {
-            StreamIterator<StreamResponseV2> stream = this.client.chatCompletionStream(request);
-            return ResponseEntity.ok().contentType(MediaType.TEXT_EVENT_STREAM).body(os -> {
-                try {
-                    while (stream.hasNext()) {
-                        StreamResponseV2 response = stream.next();
-                        if (response == null) {
-                            break;
-                        }
-                        String json = this.gson.toJson(response);
-                        LOGGER.info("答：{}", json);
-                        StreamUtils.copy("data: " + json + "\n\n", StandardCharsets.UTF_8, os);
-                    }
-                    StreamUtils.copy("data: [DONE]\n\n", StandardCharsets.UTF_8, os);
-                } finally {
-                    stream.close();
-                }
-            });
-        } else {
-            ResponseV2 response = this.client.chatCompletion(request);
-            String json = this.gson.toJson(response);
-            LOGGER.info("答：{}", json);
-            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(os ->
-                    StreamUtils.copy(json, StandardCharsets.UTF_8, os));
-        }
-    }
-
-    @PostMapping("/chat/completions")
-    public ResponseEntity<StreamingResponseBody> chatCompletions(@RequestBody ChatRequest request) throws IOException {
-        LOGGER.info("问：{}", this.gson.toJson(request));
-        CloseableHttpResponse response = this.httpClient.execute(ClassicRequestBuilder
-                .post(String.format("%s/chat/completions", properties.getOpenai().getBaseUrl()))
-                .addHeader("Authorization", String.format("Bearer %s", properties.getOpenai().getApiKey()))
-                .setEntity(EntityBuilder.create()
-                        .setContentType(ContentType.APPLICATION_JSON)
-                        .setText(this.gson.toJson(request)).build()).build());
-        HttpHeaders headers = new HttpHeaders();
-        Arrays.stream(response.getHeaders()).forEach(header -> headers.add(header.getName(), header.getValue()));
-        return ResponseEntity.status(response.getCode()).headers(headers).body(os -> {
-            try {
-                if (MediaType.TEXT_EVENT_STREAM.isCompatibleWith(headers.getContentType())) {
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()
-                            , StandardCharsets.UTF_8))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            if (line.isEmpty()) {
-                                continue;
-                            }
-                            LOGGER.info("答：{}", line);
-                            StreamUtils.copy(line + "\n\n", StandardCharsets.UTF_8, os);
-                        }
-                    }
-                } else {
-                    try {
-                        String json = EntityUtils.toString(response.getEntity());
-                        LOGGER.info("答：{}", json);
-                        StreamUtils.copy(json, StandardCharsets.UTF_8, os);
-                    } catch (ParseException e) {
-                        throw new IOException(e);
-                    }
-                }
-            } finally {
-                response.close();
-            }
-        });
-    }
-
-
-    void refreshCredentials() throws IOException {
+    void refreshCredentials() {
         if (!StringUtils.hasText(this.credentials.getAccessToken())
                 || this.credentials.getExpiresIn() < System.currentTimeMillis()) {
-            Credentials credentials = this.httpClient.execute(ClassicRequestBuilder
-                    .get(String.format(TOKEN_URL, this.properties.getBaidu().getApiKey(), this.properties.getBaidu().getSecretKey()))
-                    .build(), response -> {
-                String json = EntityUtils.toString(response.getEntity());
-                LOGGER.info("TOKEN：{}", json);
-                return this.gson.fromJson(json, Credentials.class);
-            });
-            this.credentials.setAccessToken(credentials.getAccessToken());
-            this.credentials.setExpiresIn(System.currentTimeMillis() + credentials.getExpiresIn() * 1000);
+            Credentials credentials = this.webClient.get()
+                    .uri("https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={0}&client_secret={1}"
+                            , this.properties.getBaidu().getApiKey(), this.properties.getBaidu().getSecretKey())
+                    .retrieve().bodyToMono(Credentials.class).block();
+            if (!ObjectUtils.isEmpty(credentials)) {
+                this.credentials.setAccessToken(credentials.getAccessToken());
+                this.credentials.setExpiresIn(System.currentTimeMillis() + credentials.getExpiresIn() * 1000);
+            }
         }
     }
 
     static class Credentials {
-        @SerializedName("access_token")
         private String accessToken;
-        @SerializedName("expires_in")
         private long expiresIn;
 
         public String getAccessToken() {
@@ -206,40 +101,40 @@ public class HumanController {
     void refreshToken() throws IOException {
         if (!StringUtils.hasText(this.token.getId())
                 || this.token.getExpireTime() < System.currentTimeMillis()) {
-            BasicNameValuePair[] params = {
-                    new BasicNameValuePair("AccessKeyId", this.properties.getAlibaba().getAliyun().getAccessKeyId()),
-                    new BasicNameValuePair("Action", "CreateToken"),
-                    new BasicNameValuePair("Format", "JSON"),
-                    new BasicNameValuePair("RegionId", "cn-shanghai"),
-                    new BasicNameValuePair("SignatureMethod", "HMAC-SHA1"),
-                    new BasicNameValuePair("SignatureNonce", UUID.randomUUID().toString()),
-                    new BasicNameValuePair("SignatureVersion", "1.0"),
-                    new BasicNameValuePair("Timestamp", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") {{
-                        this.setTimeZone(new SimpleTimeZone(0, "GMT"));
-                    }}.format(new Date())),
-                    new BasicNameValuePair("Version", "2019-02-28"),
-            };
+            Map<String, String> variables = new LinkedHashMap<String, String>() {{
+                this.put("AccessKeyId", properties.getAlibaba().getAliyun().getAccessKeyId());
+                this.put("Action", "CreateToken");
+                this.put("Format", "JSON");
+                this.put("RegionId", "cn-shanghai");
+                this.put("SignatureMethod", "HMAC-SHA1");
+                this.put("SignatureNonce", UUID.randomUUID().toString());
+                this.put("SignatureVersion", "1.0");
+                this.put("Timestamp", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") {{
+                    this.setTimeZone(new SimpleTimeZone(0, "GMT"));
+                }}.format(new Date()));
+                this.put("Version", "2019-02-28");
+            }};
             StringJoiner sign = new StringJoiner("&");
-            for (BasicNameValuePair param : params) {
-                sign.add(String.format("%s=%s", param.getName(), URLEncoder.encode(param.getValue(), "UTF-8")));
+            for (Map.Entry<String, String> variable : variables.entrySet()) {
+                sign.add(String.format("%s=%s", variable.getKey(), URLEncoder.encode(variable.getValue(), "UTF-8")));
             }
-            Token token = this.httpClient.execute(ClassicRequestBuilder.get("https://nls-meta.cn-shanghai.aliyuncs.com/")
-                    .addParameter("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1"
-                            , String.format("%s&", this.properties.getAlibaba().getAliyun().getAccessKeySecret()))
-                            .hmac(String.format("GET&%s&%s", URLEncoder.encode("/", "UTF-8")
-                                    , URLEncoder.encode(sign.toString(), "UTF-8")))))
-                    .addParameters(params).build(), response -> {
-                String json = EntityUtils.toString(response.getEntity());
-                LOGGER.info("TOKEN：{}", json);
-                return this.gson.fromJson(json, Token.class);
-            });
-            this.token.setId(token.getId());
-            this.token.setExpireTime(token.getExpireTime() * 1000);
+            variables.put("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1"
+                    , String.format("%s&", this.properties.getAlibaba().getAliyun().getAccessKeySecret()))
+                    .hmac(String.format("GET&%s&%s", URLEncoder.encode("/", "UTF-8")
+                            , URLEncoder.encode(sign.toString(), "UTF-8")))));
+
+            Token token = this.webClient.get().uri("https://nls-meta.cn-shanghai.aliyuncs.com/" +
+                            "?AccessKeyId={AccessKeyId}&Action={Action}&Format={Format}&RegionId={RegionId}&SignatureMethod={SignatureMethod}" +
+                            "&SignatureNonce={SignatureNonce}&SignatureVersion={SignatureVersion}&Timestamp={Timestamp}&Version={Version}&Signature={Signature}", variables)
+                    .retrieve().bodyToMono(Token.class).block();
+            if (!ObjectUtils.isEmpty(token)) {
+                this.token.setId(token.getId());
+                this.token.setExpireTime(token.getExpireTime() * 1000);
+            }
         }
     }
 
     static class Token {
-        @SerializedName("Token")
         public _Token token = new _Token();
 
         public String getId() {
@@ -259,9 +154,7 @@ public class HumanController {
         }
 
         static class _Token {
-            @SerializedName("Id")
             public String id;
-            @SerializedName("ExpireTime")
             public long expireTime;
         }
     }

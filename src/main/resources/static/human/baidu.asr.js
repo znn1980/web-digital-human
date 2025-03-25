@@ -57,7 +57,7 @@ layui.define(function (exports) {
             reader.onload = function () {
                 console.log(reader.result);
                 const data = encodeURIComponent(reader.result.split(',')[1]);
-                layui.$.post('api/speech/recognitions', data, function (data) {
+                layui.$.post('baidu/speech/recognitions', data, function (data) {
                     console.log(data);
                     if (data.err_no !== 0) {
                         layui.layer.msg('语音识别失败！（' + data.err_no + ':' + data.err_msg + '）');

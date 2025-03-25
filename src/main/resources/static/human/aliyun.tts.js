@@ -9,7 +9,7 @@ layui.define(function (exports) {
         voice: 'xiaoyun',
         open: function (callback) {
             const loading = layui.layer.load(0);
-            layui.$.get('aliyun/token', function (data) {
+            layui.$.get('aliyun/credentials', function (data) {
                 console.log(data);
                 $tts.ws = new WebSocket(`wss://nls-gateway-cn-beijing.aliyuncs.com/ws/v1?token=${data}`);
                 $tts.ws.binaryType = "arraybuffer";

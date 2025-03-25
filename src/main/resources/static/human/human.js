@@ -171,7 +171,7 @@ layui.define(function (exports) {
         send: function (text, callback) {
             $human.request.messages.push({role: 'user', content: text});
             console.log($human.request);
-            fetch('api/chat/completions', {
+            fetch('chat/completions', {
                 headers: {'Content-Type': 'application/json'},
                 method: 'POST', body: JSON.stringify($human.request)
             }).then(function (response) {
@@ -201,8 +201,8 @@ layui.define(function (exports) {
                     }
                 } else {
                     result.split('\n').forEach(line => {
-                        if (line && line.startsWith('data: {') && line.endsWith('}')) {
-                            const data = JSON.parse(line.substring('data: '.length));
+                        if (line && line.startsWith('data:') && line.endsWith('}')) {
+                            const data = JSON.parse(line.substring('data:'.length));
                             console.log(data);
                             if (data.choices && data.choices[0] && data.choices[0].delta) {
                                 text.push(data.choices[0].delta.reasoning_content

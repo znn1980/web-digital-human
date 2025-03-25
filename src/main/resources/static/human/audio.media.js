@@ -3,7 +3,7 @@ const AudioContext = function () {
 };
 
 const AudioPlayer = function (audioContext, onPlay, onDone) {
-    this.audioContext = audioContext;
+    this.audioContext = new AudioContext();
     this.onPlay = onPlay;
     this.onDone = onDone;
     this.bufferSource = null;
@@ -78,7 +78,7 @@ const AudioPlayer = function (audioContext, onPlay, onDone) {
 };
 
 const AudioRecorder = function (audioContext) {
-    this.audioContext = audioContext;
+    this.audioContext = null;
     this.mediaStreamSource = null;
     this.scriptProcessor = null;
     this.mediaStream = null;
@@ -97,6 +97,7 @@ const AudioRecorder = function (audioContext) {
     };
     this.start = function (mediaStream, _onProcess) {
         this.clear();
+        this.audioContext = new AudioContext();
         this.mediaStream = mediaStream;
         this.mediaStreamSource = this.audioContext.createMediaStreamSource(mediaStream);
         this.scriptProcessor = (this.audioContext.createScriptProcessor || this.audioContext.createJavaScriptNode)

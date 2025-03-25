@@ -10,7 +10,7 @@ layui.define(function (exports) {
         voice: 0,
         open: function (callback) {
             const loading = layui.layer.load(0);
-            layui.$.get('api/credentials', function (data) {
+            layui.$.get('baidu/credentials', function (data) {
                 $tts.ws = new WebSocket(`wss://aip.baidubce.com/ws/2.0/speech/publiccloudspeech/v1/tts?access_token=${data}&per=${$tts.voice}`);
                 $tts.ws.onopen = function () {
                     $tts.start();
