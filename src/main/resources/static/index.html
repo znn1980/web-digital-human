@@ -89,6 +89,7 @@
     </style>
 </head>
 <body>
+<script src="human/fetch.event.source.js"></script>
 <script src="human/audio.media.js"></script>
 <script src="human/marked.min.js"></script>
 <script src="layui/layui.js"></script>
@@ -219,6 +220,7 @@
                     audioPlayer.onPush(buffer);
                     return;
                 }
+                const messages = [];
                 const uuid = Date.now();
                 const loading = layui.layer.load(0);
                 layui.human.send(layui.$('#text').val(), function (done, text) {
@@ -227,11 +229,9 @@
                         layui.layer.close(loading);
                     }
                     if (text && text !== '') {
+                        messages.push(text)
                         layui.tts.send(text);
-                    }
-                    const message = layui.human.response.messages.join('');
-                    if (message && message !== '') {
-                        layui.human.chat(marked.parse(message), uuid);
+                        layui.human.chat(marked.parse(messages.join('')), uuid);
                     }
                 });
                 layui.$('#text').val('');

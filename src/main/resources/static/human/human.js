@@ -38,7 +38,7 @@ layui.define(function (exports) {
         //大模型请求
         request: {model: '', stream: true, messages: []},
         //大模型应答
-        response: {messages: [], content: []},
+        response: {messages: []},
         //初始化画布，并加载第一个数字人形象
         init: function () {
             const human = document.querySelector('#human');
@@ -166,54 +166,53 @@ layui.define(function (exports) {
         },
         //说话
         send: function (text, callback) {
+            $human.response.messages = [];
             $human.request.messages.push({role: 'user', content: text});
             console.log($human.request);
-            fetch('chat/completions', {
+            SSE.fetchEventSource('chat/completions', {
+                method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                method: 'POST', body: JSON.stringify($human.request)
-            }).then(function (response) {
-                if (!response.ok) {
-                    throw new Error(response.status + '-' + response.statusText);
-                }
-                return response.body;
-            }).then(function (data) {
-                $human.response.messages = [];
-                $human.response.content = [];
-                $human.stream(data.getReader(), callback);
-            }).catch(function (error) {
-                typeof callback === 'function' && callback(true, null);
-                $human.request.messages.pop();
-                layui.layer.msg('发送数据失败！（' + error + '）');
-            });
-        },
-        stream: function (reader, callback) {
-            const decoder = new TextDecoder('UTF-8');
-            return reader.read().then(function ({done, value}) {
-                const result = decoder.decode(value, {stream: true});
-                console.log(done, result);
-                const text = [];
-                if (done) {
-                    const content = $human.response.content.join('');
-                    if (content !== '') {
-                        $human.request.messages.push({role: 'assistant', content: content});
+                body: JSON.stringify($human.request),
+                onopen: function (response) {
+                    console.log(response);
+                    if (!response.ok) {
+                        throw new Error(response.status + '-' + response.statusText);
                     }
-                } else {
-                    result.split('\n').forEach(line => {
-                        if (line && line.startsWith('data:') && line.endsWith('}')) {
-                            const data = JSON.parse(line.substring('data:'.length));
-                            console.log(data);
-                            if (data.choices && data.choices[0] && data.choices[0].delta) {
-                                text.push(data.choices[0].delta.reasoning_content
-                                    || data.choices[0].delta.content || '');
-                                $human.response.content.push(data.choices[0].delta.content || '');
-                            }
+                },
+                onmessage: function (msg) {
+                    console.log(msg);
+                    if (msg.event === 'FatalError') {
+                        throw new Error(msg.data);
+                    }
+                    if (msg.data === '[DONE]') {
+                        if ($human.response.messages.join('') !== '') {
+                            $human.request.messages.push({
+                                role: 'assistant',
+                                content: $human.response.messages.join('')
+                            });
                         }
-                    });
-                    console.log(text.join(''));
-                    $human.response.messages.push(text.join(''));
-                    $human.stream(reader, callback);
+                        typeof callback === 'function' && callback(true, null);
+                    }
+                    if (msg.data.startsWith('{') && msg.data.endsWith('}')) {
+                        const data = JSON.parse(msg.data);
+                        if (data.choices && data.choices[0] && data.choices[0].delta) {
+                            const text = data.choices[0].delta.reasoning_content || data.choices[0].delta.content || '';
+                            $human.response.messages.push(data.choices[0].delta.content || '');
+                            typeof callback === 'function' && callback(false, text);
+                        }
+                    }
+                },
+                onclose: function () {
+                    console.log('SSE关闭！');
+                    typeof callback === 'function' && callback(true, null);
+                },
+                onerror: function (error) {
+                    console.log(error);
+                    $human.request.messages.pop();
+                    layui.layer.msg(`发送数据失败！（${error}）`);
+                    typeof callback === 'function' && callback(true, null);
+                    throw error;
                 }
-                typeof callback === 'function' && callback(done, text.join(''));
             });
         },
         models: function (callback) {
