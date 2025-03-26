@@ -1,5 +1,6 @@
 package web.digital.human;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.http.MediaType;
@@ -41,6 +42,7 @@ public class HumanController {
         return this.webClient.post()
                 .uri(this.properties.getChat().getBaseUrl() + "/chat/completions")
                 .header("Authorization", String.format("Bearer %s", this.properties.getChat().getApiKey()))
+                .accept(MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request).retrieve().bodyToFlux(String.class);
     }
@@ -66,6 +68,7 @@ public class HumanController {
                         , this.credentials.getAccessToken())
                 .header("format", "pcm")
                 .header("rate", "16000")
+                .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.parseMediaType("audio/pcm;rate=16000"))
                 .bodyValue(bytes).retrieve().bodyToMono(String.class).block();
     }
@@ -76,6 +79,7 @@ public class HumanController {
             Credentials credentials = this.webClient.get()
                     .uri("https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={0}&client_secret={1}"
                             , this.properties.getBaidu().getApiKey(), this.properties.getBaidu().getSecretKey())
+                    .accept(MediaType.APPLICATION_JSON)
                     .retrieve().bodyToMono(Credentials.class).block();
             if (!ObjectUtils.isEmpty(credentials)) {
                 this.credentials.setAccessToken(credentials.getAccessToken());
@@ -107,6 +111,7 @@ public class HumanController {
 
             Token token = this.webClient.get()
                     .uri("https://nls-meta.cn-shanghai.aliyuncs.com", uriBuilder -> uriBuilder.queryParams(params).build())
+                    .accept(MediaType.APPLICATION_JSON)
                     .retrieve().bodyToMono(Token.class).block();
             if (!ObjectUtils.isEmpty(token)) {
                 this.token.setId(token.getId());
@@ -139,7 +144,9 @@ public class HumanController {
     }
 
     static class Credentials {
+        @JsonProperty("access_token")
         private String accessToken;
+        @JsonProperty("expires_in")
         private long expiresIn;
 
         public String getAccessToken() {
@@ -160,6 +167,7 @@ public class HumanController {
     }
 
     static class Token {
+        @JsonProperty("Token")
         public _Token token = new _Token();
 
         public String getId() {
@@ -179,7 +187,9 @@ public class HumanController {
         }
 
         static class _Token {
+            @JsonProperty("Id")
             public String id;
+            @JsonProperty("ExpireTime")
             public long expireTime;
         }
     }

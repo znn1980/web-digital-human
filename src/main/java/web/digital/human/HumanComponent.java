@@ -31,14 +31,15 @@ public class HumanComponent {
     @Bean
     public ObjectMapper objectMapper() {
         return JsonMapper.builder()
-                .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES).build();
+                .build();
     }
 
     @Bean
     public SslContext sslContext() throws SSLException {
-        return SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
+        return SslContextBuilder.forClient()
+                .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                .build();
     }
 
     @Bean
