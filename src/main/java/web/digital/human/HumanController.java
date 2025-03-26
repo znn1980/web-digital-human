@@ -14,7 +14,9 @@ import reactor.core.publisher.Flux;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @RestController
@@ -40,7 +42,6 @@ public class HumanController {
                 .uri(this.properties.getChat().getBaseUrl() + "/chat/completions")
                 .header("Authorization", String.format("Bearer %s", this.properties.getChat().getApiKey()))
                 .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.TEXT_EVENT_STREAM)
                 .bodyValue(request).retrieve().bodyToFlux(String.class);
     }
 
@@ -86,30 +87,26 @@ public class HumanController {
     void refreshToken() throws IOException {
         if (!StringUtils.hasText(this.token.getId())
                 || this.token.getExpireTime() < System.currentTimeMillis()) {
-            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>() {{
-                this.add("AccessKeyId", properties.getAliyun().getAccessKeyId());
-                this.add("Action", "CreateToken");
-                this.add("Format", "JSON");
-                this.add("RegionId", "cn-shanghai");
-                this.add("SignatureMethod", "HMAC-SHA1");
-                this.add("SignatureNonce", UUID.randomUUID().toString());
-                this.add("SignatureVersion", "1.0");
-                this.add("Timestamp", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") {{
-                    this.setTimeZone(new SimpleTimeZone(0, "GMT"));
-                }}.format(new Date()));
-                this.add("Version", "2019-02-28");
-            }};
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            params.add("AccessKeyId", properties.getAliyun().getAccessKeyId());
+            params.add("Action", "CreateToken");
+            params.add("Format", "JSON");
+            params.add("RegionId", "cn-shanghai");
+            params.add("SignatureMethod", "HMAC-SHA1");
+            params.add("SignatureNonce", UUID.randomUUID().toString());
+            params.add("SignatureVersion", "1.0");
+            params.add("Timestamp", LocalDateTime.now(Clock.systemUTC()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")));
+            params.add("Version", "2019-02-28");
             StringJoiner sign = new StringJoiner("&");
             for (Map.Entry<String, String> param : params.toSingleValueMap().entrySet()) {
                 sign.add(String.format("%s=%s", param.getKey(), URLEncoder.encode(param.getValue(), "UTF-8")));
             }
-            params.add("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1"
-                    , String.format("%s&", this.properties.getAliyun().getAccessKeySecret()))
-                    .hmac(String.format("GET&%s&%s", URLEncoder.encode("/", "UTF-8")
-                            , URLEncoder.encode(sign.toString(), "UTF-8")))));
+            String key = String.format("%s&", this.properties.getAliyun().getAccessKeySecret());
+            String value = String.format("GET&%s&%s", URLEncoder.encode("/", "UTF-8"), URLEncoder.encode(sign.toString(), "UTF-8"));
+            params.add("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1", key).hmac(value)));
 
             Token token = this.webClient.get()
-                    .uri("https://nls-meta.cn-shanghai.aliyuncs.com/", uriBuilder -> uriBuilder.queryParams(params).build())
+                    .uri("https://nls-meta.cn-shanghai.aliyuncs.com", uriBuilder -> uriBuilder.queryParams(params).build())
                     .retrieve().bodyToMono(Token.class).block();
             if (!ObjectUtils.isEmpty(token)) {
                 this.token.setId(token.getId());

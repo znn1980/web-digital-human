@@ -16,10 +16,8 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
@@ -51,6 +49,16 @@ public class HumanComponent {
                 .doOnConnected(conn -> conn
                         .addHandlerFirst(new ReadTimeoutHandler(10))
                         .addHandlerFirst(new WriteTimeoutHandler(10)))
+                .doOnRequest((request, conn) -> {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("Request: {} {} {}", request.version(), request.method(), request.uri());
+                    }
+                })
+                .doOnResponse((response, conn) -> {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("Response status: {} headers: {}", response.status(), response.responseHeaders());
+                    }
+                })
                 .secure(ssl -> ssl.sslContext(sslContext));
     }
 
@@ -63,14 +71,6 @@ public class HumanComponent {
                             configurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(objectMapper, MediaType.APPLICATION_JSON));
                             configurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON));
                         }).build())
-                .filter(ExchangeFilterFunction.ofRequestProcessor(processor -> {
-                    LOGGER.info("Request: {} {} headers: {}", processor.method(), processor.url(), processor.headers());
-                    return Mono.just(processor);
-                }))
-                .filter(ExchangeFilterFunction.ofResponseProcessor(processor -> {
-                    LOGGER.info("Response status: {} headers: {}", processor.statusCode(), processor.headers().asHttpHeaders());
-                    return Mono.just(processor);
-                }))
                 .build();
     }
 }

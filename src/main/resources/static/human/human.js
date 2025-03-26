@@ -38,7 +38,7 @@ layui.define(function (exports) {
         //大模型请求
         request: {model: '', stream: true, messages: []},
         //大模型应答
-        response: {messages: []},
+        response: {messages: [], content: []},
         //初始化画布，并加载第一个数字人形象
         init: function () {
             const human = document.querySelector('#human');
@@ -178,6 +178,7 @@ layui.define(function (exports) {
                 return response.body;
             }).then(function (data) {
                 $human.response.messages = [];
+                $human.response.content = [];
                 $human.stream(data.getReader(), callback);
             }).catch(function (error) {
                 typeof callback === 'function' && callback(true, null);
@@ -192,9 +193,9 @@ layui.define(function (exports) {
                 console.log(done, result);
                 const text = [];
                 if (done) {
-                    const message = $human.response.messages.join('');
-                    if (message !== '') {
-                        $human.request.messages.push({role: 'assistant', content: message});
+                    const content = $human.response.content.join('');
+                    if (content !== '') {
+                        $human.request.messages.push({role: 'assistant', content: content});
                     }
                 } else {
                     result.split('\n').forEach(line => {
@@ -204,6 +205,7 @@ layui.define(function (exports) {
                             if (data.choices && data.choices[0] && data.choices[0].delta) {
                                 text.push(data.choices[0].delta.reasoning_content
                                     || data.choices[0].delta.content || '');
+                                $human.response.content.push(data.choices[0].delta.content || '');
                             }
                         }
                     });
