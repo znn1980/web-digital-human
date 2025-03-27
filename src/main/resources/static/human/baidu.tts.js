@@ -41,7 +41,8 @@ layui.define(function (exports) {
                         }
                         if (data.code !== 0) {
                             $tts.ws.close();
-                            layui.layer.msg(`语音合成失败！（${data.code}:${data.message}）`);
+                            console.log('语音合成失败:', data);
+                            //layui.layer.msg(`语音合成失败！（${data.code}:${data.message}）`);
                         }
                     }
                 };

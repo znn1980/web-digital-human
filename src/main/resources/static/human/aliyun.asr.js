@@ -2,6 +2,7 @@ layui.define(function (exports) {
     const $asr = {
         ws: null,
         task_id: null,
+        app_key: 'HgbUmJvwD7r8Zf3Q',
         open: function (callback) {
             const loading = layui.layer.load(0);
             layui.$.get('aliyun/credentials', function (data) {
@@ -59,7 +60,7 @@ layui.define(function (exports) {
                 task_id: $asr.task_id,
                 namespace: 'SpeechTranscriber',
                 name: name,
-                appkey: 'HgbUmJvwD7r8Zf3Q'
+                appkey: $asr.app_key
             };
         },
         start: function () {
@@ -85,6 +86,31 @@ layui.define(function (exports) {
             if ($asr.ws) {
                 $asr.ws.send(buffer);
             }
+        },
+        asr: function (blob, callback) {
+            const loading = layui.layer.load(0);
+            const reader = new FileReader();
+            reader.onload = function () {
+                console.log(reader.result);
+                const data = encodeURIComponent(reader.result.split(',')[1]);
+                layui.$.post(`aliyun/speech/recognitions?appKey=${$asr.app_key}`, data, function (data) {
+                    console.log(data);
+                    if (data.status !== 20000000) {
+                        layui.layer.msg('语音识别失败！（' + data.status + ':' + data.message + '）');
+                    } else {
+                        typeof callback === 'function' && callback(data.result);
+                    }
+                    layui.layer.close(loading);
+                }).error(function (xhr, status, error) {
+                    layui.layer.close(loading);
+                    layui.layer.msg('语音识别请求异常，请重试！（' + (error || status) + '）');
+                });
+            };
+            reader.onerror = function () {
+                layui.layer.close(loading);
+                layui.layer.msg('读取录音文件失败！（' + reader.error + '）');
+            };
+            reader.readAsDataURL(blob);
         }
     };
     exports('asr', $asr);

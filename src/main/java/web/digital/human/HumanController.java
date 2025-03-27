@@ -11,6 +11,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -32,11 +33,17 @@ public class HumanController {
         this.webClient = webClient;
     }
 
+    /*
+     * 模型列表
+     */
     @GetMapping(value = "/chat/models", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<?> models() {
-        return this.properties.getChat().getModels();
+    public Mono<List<?>> models() {
+        return Mono.just(this.properties.getChat().getModels());
     }
 
+    /*
+     * 对话
+     */
     @PostMapping(value = "/chat/completions", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> chatCompletions(@RequestBody ChatRequest request) {
         return this.webClient.post()
@@ -47,22 +54,49 @@ public class HumanController {
                 .bodyValue(request).retrieve().bodyToFlux(String.class);
     }
 
+    /*
+     * 阿里云获取Token
+     * https://help.aliyun.com/zh/isi/getting-started/use-http-or-https-to-obtain-an-access-token?spm=a2c4g.11186623.help-menu-30413.d_1_2_2.5e196b9bL8hfht&scm=20140722.H_113251._.OR_help-T_cn~zh-V_1
+     */
     @GetMapping(value = "/aliyun/credentials", produces = MediaType.TEXT_PLAIN_VALUE)
-    public String token() throws IOException {
+    public Mono<String> token() throws IOException {
         this.refreshToken();
-        return this.token.getId();
+        return Mono.just(this.token.getId());
     }
 
+    /*
+     * 阿里云语音识别
+     * https://help.aliyun.com/zh/isi/developer-reference/restful-api-2?spm=a2c4g.11186623.help-menu-30413.d_3_0_0_1.11686b9brDCn5O&scm=20140722.H_92131._.OR_help-T_cn~zh-V_1
+     */
+    @PostMapping(value = "/aliyun/speech/recognitions", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<String> speechRecognitions(@RequestParam String appKey, @RequestBody String vop) throws IOException {
+        this.refreshToken();
+        return this.webClient.post()
+                .uri("https://nls-gateway-cn-shanghai.aliyuncs.com/stream/v1/asr?appkey={0}&format=pcm&sample_rate=16000"
+                        , appKey)
+                .header("X-NLS-Token", this.token.getId())
+                .header("Host", "nls-gateway-cn-shanghai.aliyuncs.com")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .bodyValue(Base64.decodeBase64(urlDecoder(vop))).retrieve().bodyToMono(String.class);
+    }
+
+    /*
+     * 百度鉴权认证
+     * https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu
+     */
     @GetMapping(value = "/baidu/credentials", produces = MediaType.TEXT_PLAIN_VALUE)
-    public String credentials() {
+    public Mono<String> credentials() {
         this.refreshCredentials();
-        return this.credentials.getAccessToken();
+        return Mono.just(this.credentials.getAccessToken());
     }
 
+    /*
+     * 百度语音识别
+     * https://ai.baidu.com/ai-doc/SPEECH/4lbxdz34z
+     */
     @PostMapping(value = "/baidu/speech/recognitions", produces = MediaType.APPLICATION_JSON_VALUE)
-    public String speechRecognitions(@RequestBody String vop) throws IOException {
+    public Mono<String> speechRecognitions(@RequestBody String vop) throws IOException {
         this.refreshCredentials();
-        byte[] bytes = Base64.decodeBase64(URLDecoder.decode(vop, "UTF-8"));
         return this.webClient.post()
                 .uri("https://vop.baidu.com/pro_api?token={0}&cuid=SC1234567890&dev_pid=80001"
                         , this.credentials.getAccessToken())
@@ -70,9 +104,10 @@ public class HumanController {
                 .header("rate", "16000")
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.parseMediaType("audio/pcm;rate=16000"))
-                .bodyValue(bytes).retrieve().bodyToMono(String.class).block();
+                .bodyValue(Base64.decodeBase64(urlDecoder(vop))).retrieve().bodyToMono(String.class);
     }
 
+    //百度鉴权认证刷新
     void refreshCredentials() {
         if (!StringUtils.hasText(this.credentials.getAccessToken())
                 || this.credentials.getExpiresIn() < System.currentTimeMillis()) {
@@ -88,6 +123,7 @@ public class HumanController {
         }
     }
 
+    //阿里云获取Token刷新
     void refreshToken() throws IOException {
         if (!StringUtils.hasText(this.token.getId())
                 || this.token.getExpireTime() < System.currentTimeMillis()) {
@@ -103,10 +139,10 @@ public class HumanController {
             params.add("Version", "2019-02-28");
             StringJoiner sign = new StringJoiner("&");
             for (Map.Entry<String, String> param : params.toSingleValueMap().entrySet()) {
-                sign.add(String.format("%s=%s", param.getKey(), URLEncoder.encode(param.getValue(), "UTF-8")));
+                sign.add(String.format("%s=%s", param.getKey(), urlEncoder(param.getValue())));
             }
             String key = String.format("%s&", this.properties.getAliyun().getAccessKeySecret());
-            String value = String.format("GET&%s&%s", URLEncoder.encode("/", "UTF-8"), URLEncoder.encode(sign.toString(), "UTF-8"));
+            String value = String.format("GET&%s&%s", urlEncoder("/"), urlEncoder(sign.toString()));
             params.add("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1", key).hmac(value)));
 
             Token token = this.webClient.get()
@@ -120,13 +156,20 @@ public class HumanController {
         }
     }
 
+    static String urlDecoder(String s) throws IOException {
+        return URLDecoder.decode(s, "UTF-8");
+    }
+
+    static String urlEncoder(String s) throws IOException {
+        return URLEncoder.encode(s, "UTF-8");
+    }
+
     static class ChatRequest {
         public String model;
         public boolean stream;
         public List<Message> messages;
 
         public ChatRequest() {
-
             this.model = null;
             this.stream = false;
             this.messages = null;

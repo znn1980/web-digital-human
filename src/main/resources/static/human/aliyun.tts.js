@@ -2,6 +2,7 @@ layui.define(function (exports) {
     const $tts = {
         ws: null,
         task_id: null,
+        app_key: 'HgbUmJvwD7r8Zf3Q',
         sound: [
             {title: '小云', value: 'xiaoyun'},
             {title: '小刚', value: 'xiaogang'}
@@ -43,7 +44,8 @@ layui.define(function (exports) {
                         }
                         if (data.header.status !== 20000000) {
                             $tts.ws.close();
-                            layui.layer.msg(`语音合成失败！（${data.header.status}:${data.header.status_text}）`);
+                            console.log('语音合成失败:', data);
+                            //layui.layer.msg(`语音合成失败！（${data.header.status}:${data.header.status_text}）`);
                         }
                     }
                 };
@@ -73,7 +75,7 @@ layui.define(function (exports) {
                 task_id: $tts.task_id,
                 namespace: 'FlowingSpeechSynthesizer',
                 name: name,
-                appkey: 'HgbUmJvwD7r8Zf3Q'
+                appkey: $tts.app_key
             };
         },
         //voice【发音人，默认是xiaoyun。】

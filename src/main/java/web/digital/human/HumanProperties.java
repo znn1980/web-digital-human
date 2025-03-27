@@ -10,7 +10,7 @@ import java.util.List;
 public class HumanProperties {
     private final Baidu baidu = new Baidu();
     private final Aliyun aliyun = new Aliyun();
-    private final Chat openai = new Chat();
+    private final Chat chat = new Chat();
 
     public Baidu getBaidu() {
         return this.baidu;
@@ -21,7 +21,7 @@ public class HumanProperties {
     }
 
     public Chat getChat() {
-        return this.openai;
+        return this.chat;
     }
 
     static class Baidu {
