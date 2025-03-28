@@ -71,7 +71,7 @@ public class HumanController {
         return this.refreshToken().flatMap(token -> this.webClient.post()
                 .uri("https://nls-gateway-cn-shanghai.aliyuncs.com/stream/v1/asr?appkey={0}&format=pcm&sample_rate=16000"
                         , appKey)
-                .header("X-NLS-Token", this.token.getId())
+                .header("X-NLS-Token", token.getId())
                 .header("Host", "nls-gateway-cn-shanghai.aliyuncs.com")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .bodyValue(Base64.decodeBase64(urlDecoder(vop))).retrieve().bodyToMono(String.class));
@@ -94,7 +94,7 @@ public class HumanController {
     public Mono<String> speechRecognitions(String vop) {
         return this.refreshCredentials().flatMap(credentials -> this.webClient.post()
                 .uri("https://vop.baidu.com/pro_api?token={0}&cuid=SC1234567890&dev_pid=80001"
-                        , this.credentials.getAccessToken())
+                        , credentials.getAccessToken())
                 .header("format", "pcm")
                 .header("rate", "16000")
                 .accept(MediaType.APPLICATION_JSON)
@@ -126,7 +126,7 @@ public class HumanController {
             return Mono.just(this.token);
         }
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("AccessKeyId", properties.getAliyun().getAccessKeyId());
+        params.add("AccessKeyId", this.properties.getAliyun().getAccessKeyId());
         params.add("Action", "CreateToken");
         params.add("Format", "JSON");
         params.add("RegionId", "cn-shanghai");
