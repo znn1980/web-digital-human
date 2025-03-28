@@ -1,6 +1,8 @@
 layui.define(function (exports) {
     const $asr = {
         ws: null,
+        app_id: '',
+        app_key: '',
         open: function (callback) {
             const loading = layui.layer.load(0);
             $asr.ws = new WebSocket(`wss://vop.baidu.com/realtime_asr?sn=${Date.now()}`);
@@ -38,7 +40,14 @@ layui.define(function (exports) {
             if ($asr.ws) {
                 $asr.ws.send(JSON.stringify({
                     type: 'START',
-                    data: {appid: 0, appkey: '', dev_pid: 15372, cuid: 'SC1234567890', format: 'pcm', sample: 16000}
+                    data: {
+                        appid: $asr.app_id,
+                        appkey: $asr.app_key,
+                        dev_pid: 15372,
+                        cuid: 'SC1234567890',
+                        format: 'pcm',
+                        sample: 16000
+                    }
                 }));
             }
         },
