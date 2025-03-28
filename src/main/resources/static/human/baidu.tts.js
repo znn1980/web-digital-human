@@ -48,7 +48,7 @@ layui.define(function (exports) {
                 };
             }).error(function (xhr, status, error) {
                 layui.layer.close(loading);
-                layui.layer.msg('语音合成请求异常，请重试！（' + (error || status) + '）');
+                layui.layer.msg(`语音合成请求异常，请重试！（${error || status}）`);
             });
         },
         //spd【语速，取值 0-15，默认为 5】

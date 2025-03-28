@@ -28,8 +28,9 @@ layui.define(function (exports) {
                     typeof callback === 'function' && callback(true, data.result);
                 }
                 if (data.err_no !== 0) {
-                    $asr.ws.close();
-                    layui.layer.msg(`语音识别失败！（${data.err_no}:${data.err_msg}）`);
+                    $asr.ws.close()
+                    console.log('语音识别失败:', data);
+                    //layui.layer.msg(`语音识别失败！（${data.err_no}:${data.err_msg}）`);
                 }
             };
         },
@@ -54,25 +55,26 @@ layui.define(function (exports) {
         asr: function (blob, callback) {
             const loading = layui.layer.load(0);
             const reader = new FileReader();
-            reader.onload = function () {
-                console.log(reader.result);
-                const data = encodeURIComponent(reader.result.split(',')[1]);
-                layui.$.post('baidu/speech/recognitions', data, function (data) {
+            reader.onload = function (e) {
+                console.log(e.target.result);
+                layui.$.post('baidu/speech/recognitions', {
+                    vop: encodeURIComponent(e.target.result.split(',')[1])
+                }, function (data) {
                     console.log(data);
                     if (data.err_no !== 0) {
-                        layui.layer.msg('语音识别失败！（' + data.err_no + ':' + data.err_msg + '）');
+                        layui.layer.msg(`语音识别失败！（${data.err_no}:${data.err_msg}）`);
                     } else {
                         typeof callback === 'function' && callback(data.result[0]);
                     }
                     layui.layer.close(loading);
                 }).error(function (xhr, status, error) {
                     layui.layer.close(loading);
-                    layui.layer.msg('语音识别请求异常，请重试！（' + (error || status) + '）');
+                    layui.layer.msg(`语音识别请求异常，请重试！（${error || status}）`);
                 });
             };
             reader.onerror = function () {
                 layui.layer.close(loading);
-                layui.layer.msg('读取录音文件失败！（' + reader.error + '）');
+                layui.layer.msg(`读取录音文件失败！（${reader.error}）`);
             };
             reader.readAsDataURL(blob);
         }

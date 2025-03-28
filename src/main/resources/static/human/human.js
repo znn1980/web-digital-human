@@ -78,7 +78,7 @@ layui.define(function (exports) {
                 $human.onload(image, function () {
                     length++;
                     const total = human.standby.frame + human.speak.frame;
-                    layui.$('#loading').html('数字人，加载中...（' + Math.round(length / total * 100) + '%）');
+                    layui.$('#loading').html(`数字人，加载中...（${Math.round(length / total * 100)}%）`);
                     if (length === total) {
                         $human.draw($human.frames.standby[0]);
                         layui.layer.close(loading);
@@ -221,7 +221,7 @@ layui.define(function (exports) {
                 $human.request.model = data[0].value;
                 typeof callback === 'function' && callback();
             }).error(function (xhr, status, error) {
-                layui.layer.msg('模型请求异常，请重试！（' + (error || status) + '）');
+                layui.layer.msg(`模型请求异常，请重试！（${error || status}）`);
             });
         }
     };

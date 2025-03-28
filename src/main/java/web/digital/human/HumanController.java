@@ -67,7 +67,7 @@ public class HumanController {
      * https://help.aliyun.com/zh/isi/developer-reference/restful-api-2?spm=a2c4g.11186623.help-menu-30413.d_3_0_0_1.11686b9brDCn5O&scm=20140722.H_92131._.OR_help-T_cn~zh-V_1
      */
     @PostMapping(value = "/aliyun/speech/recognitions", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Mono<String> speechRecognitions(@RequestParam String appKey, @RequestBody String vop) {
+    public Mono<String> speechRecognitions(String appKey, String vop) {
         return this.refreshToken().flatMap(token -> this.webClient.post()
                 .uri("https://nls-gateway-cn-shanghai.aliyuncs.com/stream/v1/asr?appkey={0}&format=pcm&sample_rate=16000"
                         , appKey)
@@ -91,7 +91,7 @@ public class HumanController {
      * https://ai.baidu.com/ai-doc/SPEECH/4lbxdz34z
      */
     @PostMapping(value = "/baidu/speech/recognitions", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Mono<String> speechRecognitions(@RequestBody String vop) {
+    public Mono<String> speechRecognitions(String vop) {
         return this.refreshCredentials().flatMap(credentials -> this.webClient.post()
                 .uri("https://vop.baidu.com/pro_api?token={0}&cuid=SC1234567890&dev_pid=80001"
                         , this.credentials.getAccessToken())
@@ -136,10 +136,14 @@ public class HumanController {
         params.add("Timestamp", LocalDateTime.now(Clock.systemUTC())
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")));
         params.add("Version", "2019-02-28");
+
+        String[] keys = params.toSingleValueMap().keySet().toArray(new String[0]);
+        Arrays.sort(keys);
         StringJoiner sign = new StringJoiner("&");
-        for (Map.Entry<String, String> param : params.toSingleValueMap().entrySet()) {
-            sign.add(String.format("%s=%s", param.getKey(), urlEncoder(param.getValue())));
+        for (String key : keys) {
+            sign.add(String.format("%s=%s", urlEncoder(key), urlEncoder(params.getFirst(key))));
         }
+
         String key = String.format("%s&", this.properties.getAliyun().getAccessKeySecret());
         String value = String.format("GET&%s&%s", urlEncoder("/"), urlEncoder(sign.toString()));
         params.add("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1", key).hmac(value)));
@@ -164,7 +168,10 @@ public class HumanController {
 
     static String urlEncoder(String s) {
         try {
-            return URLEncoder.encode(s, "UTF-8");
+            return URLEncoder.encode(s, "UTF-8")
+                    .replace("+", "%20")
+                    .replace("*", "%2A")
+                    .replace("%7E", "~");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

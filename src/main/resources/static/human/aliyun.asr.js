@@ -41,12 +41,13 @@ layui.define(function (exports) {
                     }
                     if (data.header.status !== 20000000) {
                         $asr.ws.close();
-                        layui.layer.msg(`语音识别失败！（${data.header.status}:${data.header.status_text}）`);
+                        console.log('语音识别失败:', data);
+                        //layui.layer.msg(`语音识别失败！（${data.header.status}:${data.header.status_text}）`);
                     }
                 };
             }).error(function (xhr, status, error) {
                 layui.layer.close(loading);
-                layui.layer.msg('语音识别请求异常，请重试！（' + (error || status) + '）');
+                layui.layer.msg(`语音识别请求异常，请重试！（${error || status}）`);
             });
         },
         uuid: function () {
@@ -90,25 +91,27 @@ layui.define(function (exports) {
         asr: function (blob, callback) {
             const loading = layui.layer.load(0);
             const reader = new FileReader();
-            reader.onload = function () {
-                console.log(reader.result);
-                const data = encodeURIComponent(reader.result.split(',')[1]);
-                layui.$.post(`aliyun/speech/recognitions?appKey=${$asr.app_key}`, data, function (data) {
+            reader.onload = function (e) {
+                console.log(e.target.result);
+                layui.$.post(`aliyun/speech/recognitions`, {
+                    appKey: $asr.app_key,
+                    vop: encodeURIComponent(e.target.result.split(',')[1])
+                }, function (data) {
                     console.log(data);
                     if (data.status !== 20000000) {
-                        layui.layer.msg('语音识别失败！（' + data.status + ':' + data.message + '）');
+                        layui.layer.msg(`语音识别失败！（${data.status}:${data.message}）`);
                     } else {
                         typeof callback === 'function' && callback(data.result);
                     }
                     layui.layer.close(loading);
                 }).error(function (xhr, status, error) {
                     layui.layer.close(loading);
-                    layui.layer.msg('语音识别请求异常，请重试！（' + (error || status) + '）');
+                    layui.layer.msg(`语音识别请求异常，请重试！（${error || status}）`);
                 });
             };
             reader.onerror = function () {
                 layui.layer.close(loading);
-                layui.layer.msg('读取录音文件失败！（' + reader.error + '）');
+                layui.layer.msg(`读取录音文件失败！（${reader.error}）`);
             };
             reader.readAsDataURL(blob);
         }
