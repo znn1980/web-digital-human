@@ -3,6 +3,8 @@ package web.digital.human;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.HmacUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -22,6 +24,7 @@ import java.util.*;
 
 @RestController
 public class HumanController {
+    private final static Logger LOGGER = LoggerFactory.getLogger(HumanController.class);
     private final HumanProperties properties;
     private final WebClient webClient;
     private final Credentials credentials = new Credentials();
@@ -50,59 +53,118 @@ public class HumanController {
                 .header("Authorization", String.format("Bearer %s", this.properties.getChat().getApiKey()))
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request).retrieve().bodyToFlux(String.class);
+                .bodyValue(request).retrieve().bodyToFlux(String.class)
+                .doOnNext(s -> {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("对话：{}", s);
+                    }
+                })
+                .onErrorResume(e -> {
+                    if (LOGGER.isErrorEnabled()) {
+                        LOGGER.error(String.format("对话：%s", e.getMessage()), e);
+                    }
+                    return Flux.empty();
+                });
     }
 
     /*
-     * 阿里云获取Token
+     * 【阿里云】鉴权认证
      * https://help.aliyun.com/zh/isi/getting-started/use-http-or-https-to-obtain-an-access-token?spm=a2c4g.11186623.help-menu-30413.d_1_2_2.5e196b9bL8hfht&scm=20140722.H_113251._.OR_help-T_cn~zh-V_1
      */
     @GetMapping(value = "/aliyun/credentials", produces = MediaType.TEXT_PLAIN_VALUE)
     public Mono<String> token() {
-        return this.refreshToken().flatMap(token -> Mono.just(token.getId()));
+        return this.refreshToken().map(token -> {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("【阿里云】TOKEN：{} - {}", token.getId(), token.getExpireTime());
+                    }
+                    return token.getId();
+                })
+                .onErrorResume(e -> {
+                    if (LOGGER.isErrorEnabled()) {
+                        LOGGER.error(String.format("【阿里云】TOKEN：%s", e.getMessage()), e);
+                    }
+                    return Mono.empty();
+                });
     }
 
     /*
-     * 阿里云语音识别
+     * 【阿里云】语音识别
      * https://help.aliyun.com/zh/isi/developer-reference/restful-api-2?spm=a2c4g.11186623.help-menu-30413.d_3_0_0_1.11686b9brDCn5O&scm=20140722.H_92131._.OR_help-T_cn~zh-V_1
      */
     @PostMapping(value = "/aliyun/speech/recognitions", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<String> speechRecognitions(String appKey, String vop) {
-        return this.refreshToken().flatMap(token -> this.webClient.post()
-                .uri("https://nls-gateway-cn-shanghai.aliyuncs.com/stream/v1/asr?appkey={0}&format=pcm&sample_rate=16000"
-                        , appKey)
-                .header("X-NLS-Token", token.getId())
-                .header("Host", "nls-gateway-cn-shanghai.aliyuncs.com")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .bodyValue(Base64.decodeBase64(urlDecoder(vop))).retrieve().bodyToMono(String.class));
+        return Mono.fromCallable(() -> Base64.decodeBase64(urlDecoder(vop)))
+                .flatMap((bytes) -> this.refreshToken()
+                        .flatMap(token -> this.webClient.post()
+                                .uri("https://nls-gateway-cn-shanghai.aliyuncs.com/stream/v1/asr?appkey={0}&format=pcm&sample_rate=16000"
+                                        , appKey)
+                                .header("X-NLS-Token", token.getId())
+                                .header("Host", "nls-gateway-cn-shanghai.aliyuncs.com")
+                                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                                .bodyValue(bytes).retrieve().bodyToMono(String.class)))
+                .doOnNext(s -> {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("【阿里云】语音识别：{}", s);
+                    }
+                })
+                .onErrorResume(e -> {
+                    if (LOGGER.isErrorEnabled()) {
+                        LOGGER.error(String.format("【阿里云】语音识别：%s", e.getMessage()), e);
+                    }
+                    return Mono.empty();
+                });
     }
 
     /*
-     * 百度鉴权认证
+     * 【百度】鉴权认证
      * https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu
      */
     @GetMapping(value = "/baidu/credentials", produces = MediaType.TEXT_PLAIN_VALUE)
     public Mono<String> credentials() {
-        return this.refreshCredentials().flatMap(credentials -> Mono.just(credentials.getAccessToken()));
+        return this.refreshCredentials().map(credentials -> {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("【百度】TOKEN：{} - {}", credentials.getAccessToken(), credentials.getExpiresIn());
+                    }
+                    return credentials.getAccessToken();
+                })
+                .onErrorResume(e -> {
+                    if (LOGGER.isErrorEnabled()) {
+                        LOGGER.error(String.format("【百度】TOKEN：%s", e.getMessage()), e);
+                    }
+                    return Mono.empty();
+                });
     }
 
     /*
-     * 百度语音识别
+     * 【百度】语音识别
      * https://ai.baidu.com/ai-doc/SPEECH/4lbxdz34z
      */
     @PostMapping(value = "/baidu/speech/recognitions", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<String> speechRecognitions(String vop) {
-        return this.refreshCredentials().flatMap(credentials -> this.webClient.post()
-                .uri("https://vop.baidu.com/pro_api?token={0}&cuid=SC1234567890&dev_pid=80001"
-                        , credentials.getAccessToken())
-                .header("format", "pcm")
-                .header("rate", "16000")
-                .accept(MediaType.APPLICATION_JSON)
-                .contentType(MediaType.parseMediaType("audio/pcm;rate=16000"))
-                .bodyValue(Base64.decodeBase64(urlDecoder(vop))).retrieve().bodyToMono(String.class));
+        return Mono.fromCallable(() -> Base64.decodeBase64(urlDecoder(vop)))
+                .flatMap((bytes) -> this.refreshCredentials()
+                        .flatMap(credentials -> this.webClient.post()
+                                .uri("https://vop.baidu.com/pro_api?token={0}&cuid=SC1234567890&dev_pid=80001"
+                                        , credentials.getAccessToken())
+                                .header("format", "pcm")
+                                .header("rate", "16000")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .contentType(MediaType.parseMediaType("audio/pcm;rate=16000"))
+                                .bodyValue(bytes).retrieve().bodyToMono(String.class)))
+                .doOnNext(s -> {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("【百度】语音识别：{}", s);
+                    }
+                })
+                .onErrorResume(e -> {
+                    if (LOGGER.isErrorEnabled()) {
+                        LOGGER.error(String.format("【百度】语音识别：%s", e.getMessage()), e);
+                    }
+                    return Mono.empty();
+                });
     }
 
-    //百度鉴权认证刷新
+    //【百度】鉴权认证
     Mono<Credentials> refreshCredentials() {
         if (StringUtils.hasText(this.credentials.getAccessToken())
                 && this.credentials.getExpiresIn() > System.currentTimeMillis()) {
@@ -112,69 +174,62 @@ public class HumanController {
                 .uri("https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={0}&client_secret={1}"
                         , this.properties.getBaidu().getApiKey(), this.properties.getBaidu().getSecretKey())
                 .accept(MediaType.APPLICATION_JSON)
-                .retrieve().bodyToMono(Credentials.class).flatMap(credentials -> {
+                .retrieve().bodyToMono(Credentials.class).map(credentials -> {
                     this.credentials.setAccessToken(credentials.getAccessToken());
                     this.credentials.setExpiresIn(System.currentTimeMillis() + credentials.getExpiresIn() * 1000);
-                    return Mono.just(this.credentials);
+                    return this.credentials;
                 });
     }
 
-    //阿里云获取Token刷新
+    //【阿里云】鉴权认证
     Mono<Token> refreshToken() {
         if (StringUtils.hasText(this.token.getId())
                 && this.token.getExpireTime() > System.currentTimeMillis()) {
             return Mono.just(this.token);
         }
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("AccessKeyId", this.properties.getAliyun().getAccessKeyId());
-        params.add("Action", "CreateToken");
-        params.add("Format", "JSON");
-        params.add("RegionId", "cn-shanghai");
-        params.add("SignatureMethod", "HMAC-SHA1");
-        params.add("SignatureNonce", UUID.randomUUID().toString());
-        params.add("SignatureVersion", "1.0");
-        params.add("Timestamp", LocalDateTime.now(Clock.systemUTC())
-                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")));
-        params.add("Version", "2019-02-28");
+        return Mono.fromCallable(() -> {
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            params.add("AccessKeyId", this.properties.getAliyun().getAccessKeyId());
+            params.add("Action", "CreateToken");
+            params.add("Format", "JSON");
+            params.add("RegionId", "cn-shanghai");
+            params.add("SignatureMethod", "HMAC-SHA1");
+            params.add("SignatureNonce", UUID.randomUUID().toString());
+            params.add("SignatureVersion", "1.0");
+            params.add("Timestamp", LocalDateTime.now(Clock.systemUTC())
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")));
+            params.add("Version", "2019-02-28");
 
-        String[] keys = params.toSingleValueMap().keySet().toArray(new String[0]);
-        Arrays.sort(keys);
-        StringJoiner sign = new StringJoiner("&");
-        for (String key : keys) {
-            sign.add(String.format("%s=%s", urlEncoder(key), urlEncoder(params.getFirst(key))));
-        }
+            String[] keys = params.toSingleValueMap().keySet().toArray(new String[0]);
+            Arrays.sort(keys);
+            StringJoiner sign = new StringJoiner("&");
+            for (String key : keys) {
+                sign.add(String.format("%s=%s", urlEncoder(key), urlEncoder(params.getFirst(key))));
+            }
 
-        String key = String.format("%s&", this.properties.getAliyun().getAccessKeySecret());
-        String value = String.format("GET&%s&%s", urlEncoder("/"), urlEncoder(sign.toString()));
-        params.add("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1", key).hmac(value)));
-
-        return this.webClient.get()
+            String key = String.format("%s&", this.properties.getAliyun().getAccessKeySecret());
+            String value = String.format("GET&%s&%s", urlEncoder("/"), urlEncoder(sign.toString()));
+            params.add("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1", key).hmac(value)));
+            return params;
+        }).flatMap(params -> this.webClient.get()
                 .uri("https://nls-meta.cn-shanghai.aliyuncs.com", uriBuilder -> uriBuilder.queryParams(params).build())
                 .accept(MediaType.APPLICATION_JSON)
-                .retrieve().bodyToMono(Token.class).flatMap(token -> {
+                .retrieve().bodyToMono(Token.class).map(token -> {
                     this.token.setId(token.getId());
                     this.token.setExpireTime(token.getExpireTime() * 1000);
-                    return Mono.just(this.token);
-                });
+                    return this.token;
+                }));
     }
 
-    static String urlDecoder(String s) {
-        try {
-            return URLDecoder.decode(s, "UTF-8");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    static String urlDecoder(String s) throws IOException {
+        return URLDecoder.decode(s, "UTF-8");
     }
 
-    static String urlEncoder(String s) {
-        try {
-            return URLEncoder.encode(s, "UTF-8")
-                    .replace("+", "%20")
-                    .replace("*", "%2A")
-                    .replace("%7E", "~");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    static String urlEncoder(String s) throws IOException {
+        return URLEncoder.encode(s, "UTF-8")
+                .replace("+", "%20")
+                .replace("*", "%2A")
+                .replace("%7E", "~");
     }
 
     static class ChatRequest {

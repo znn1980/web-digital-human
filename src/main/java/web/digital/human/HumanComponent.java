@@ -30,9 +30,8 @@ public class HumanComponent {
 
     @Bean
     public ObjectMapper objectMapper() {
-        return JsonMapper.builder()
-                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                .build();
+        return new ObjectMapper()
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
     @Bean
