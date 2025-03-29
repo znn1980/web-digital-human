@@ -61,7 +61,7 @@ public class HumanController {
                 })
                 .onErrorResume(e -> {
                     if (LOGGER.isErrorEnabled()) {
-                        LOGGER.error(String.format("对话：%s", e.getMessage()), e);
+                        LOGGER.error("对话：{}", e.getMessage(), e);
                     }
                     return Flux.empty();
                 });
@@ -75,13 +75,13 @@ public class HumanController {
     public Mono<String> token() {
         return this.refreshToken().map(token -> {
                     if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("【阿里云】TOKEN：{} - {}", token.getId(), token.getExpireTime());
+                        LOGGER.info("【阿里云】TOKEN：{} - {}", token.getId(), new Date(token.getExpireTime()));
                     }
                     return token.getId();
                 })
                 .onErrorResume(e -> {
                     if (LOGGER.isErrorEnabled()) {
-                        LOGGER.error(String.format("【阿里云】TOKEN：%s", e.getMessage()), e);
+                        LOGGER.error("【阿里云】TOKEN：{}", e.getMessage(), e);
                     }
                     return Mono.empty();
                 });
@@ -109,7 +109,7 @@ public class HumanController {
                 })
                 .onErrorResume(e -> {
                     if (LOGGER.isErrorEnabled()) {
-                        LOGGER.error(String.format("【阿里云】语音识别：%s", e.getMessage()), e);
+                        LOGGER.error("【阿里云】语音识别：{}", e.getMessage(), e);
                     }
                     return Mono.empty();
                 });
@@ -123,13 +123,13 @@ public class HumanController {
     public Mono<String> credentials() {
         return this.refreshCredentials().map(credentials -> {
                     if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("【百度】TOKEN：{} - {}", credentials.getAccessToken(), credentials.getExpiresIn());
+                        LOGGER.info("【百度】TOKEN：{} - {}", credentials.getAccessToken(), new Date(credentials.getExpiresIn()));
                     }
                     return credentials.getAccessToken();
                 })
                 .onErrorResume(e -> {
                     if (LOGGER.isErrorEnabled()) {
-                        LOGGER.error(String.format("【百度】TOKEN：%s", e.getMessage()), e);
+                        LOGGER.error("【百度】TOKEN：{}", e.getMessage(), e);
                     }
                     return Mono.empty();
                 });
@@ -158,7 +158,7 @@ public class HumanController {
                 })
                 .onErrorResume(e -> {
                     if (LOGGER.isErrorEnabled()) {
-                        LOGGER.error(String.format("【百度】语音识别：%s", e.getMessage()), e);
+                        LOGGER.error("【百度】语音识别：{}", e.getMessage(), e);
                     }
                     return Mono.empty();
                 });
