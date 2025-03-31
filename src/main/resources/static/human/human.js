@@ -72,14 +72,11 @@ layui.define(function (exports) {
                 $human.frames.speak.push(image);
             }
             //加载全部图像
-            const images = [...$human.frames.standby, ...$human.frames.speak];
-            let length = 0;
-            images.forEach(function (image) {
-                $human.onload(image, function () {
-                    length++;
-                    const total = human.standby.frame + human.speak.frame;
-                    layui.$('#loading').html(`数字人，加载中...（${Math.round(length / total * 100)}%）`);
-                    if (length === total) {
+            const frames = [...$human.frames.standby, ...$human.frames.speak];
+            frames.forEach(function (value, index) {
+                $human.onload(value, function () {
+                    layui.$('#loading').html(`数字人，加载中...（${Math.round(index / frames.length * 100)}%）`);
+                    if ((index + 1) === frames.length) {
                         $human.draw($human.frames.standby[0]);
                         layui.layer.close(loading);
                         $human.standby();
