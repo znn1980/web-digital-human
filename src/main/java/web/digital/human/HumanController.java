@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -187,31 +186,27 @@ public class HumanController {
                 && this.token.getExpireTime() > System.currentTimeMillis()) {
             return Mono.just(this.token);
         }
-        return Mono.fromCallable(() -> {
-            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-            params.add("AccessKeyId", this.properties.getAliyun().getAccessKeyId());
-            params.add("Action", "CreateToken");
-            params.add("Format", "JSON");
-            params.add("RegionId", "cn-shanghai");
-            params.add("SignatureMethod", "HMAC-SHA1");
-            params.add("SignatureNonce", UUID.randomUUID().toString());
-            params.add("SignatureVersion", "1.0");
-            params.add("Timestamp", LocalDateTime.now(Clock.systemUTC())
+        return Mono.fromCallable(() -> new LinkedMultiValueMap<String, String>() {{
+            this.add("AccessKeyId", properties.getAliyun().getAccessKeyId());
+            this.add("Action", "CreateToken");
+            this.add("Format", "JSON");
+            this.add("RegionId", "cn-shanghai");
+            this.add("SignatureMethod", "HMAC-SHA1");
+            this.add("SignatureNonce", UUID.randomUUID().toString());
+            this.add("SignatureVersion", "1.0");
+            this.add("Timestamp", LocalDateTime.now(Clock.systemUTC())
                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")));
-            params.add("Version", "2019-02-28");
-
-            String[] keys = params.toSingleValueMap().keySet().toArray(new String[0]);
+            this.add("Version", "2019-02-28");
+            String[] keys = this.toSingleValueMap().keySet().toArray(new String[0]);
             Arrays.sort(keys);
             StringJoiner sign = new StringJoiner("&");
             for (String key : keys) {
-                sign.add(String.format("%s=%s", urlEncoder(key), urlEncoder(params.getFirst(key))));
+                sign.add(String.format("%s=%s", urlEncoder(key), urlEncoder(this.getFirst(key))));
             }
-
-            String key = String.format("%s&", this.properties.getAliyun().getAccessKeySecret());
+            String key = String.format("%s&", properties.getAliyun().getAccessKeySecret());
             String value = String.format("GET&%s&%s", urlEncoder("/"), urlEncoder(sign.toString()));
-            params.add("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1", key).hmac(value)));
-            return params;
-        }).flatMap(params -> this.webClient.get()
+            this.add("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1", key).hmac(value)));
+        }}).flatMap(params -> this.webClient.get()
                 .uri("https://nls-meta.cn-shanghai.aliyuncs.com", uriBuilder -> uriBuilder.queryParams(params).build())
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve().bodyToMono(Token.class).map(token -> {

@@ -11,17 +11,17 @@ human:
     api-key: ************************  
     secret-key: ********************************
 ```
-> 项目中包含一个通用的对话接口,您可以使用所有厂家符合OpenAI接口规范的产品，如：[DeepSeek](https://www.deepseek.com)等。
+> 项目中包含一个通用的对话接口,您可以使用所有厂家符合OpenAI接口规范的产品，如：[DeepSeek](https://api-docs.deepseek.com/zh-cn/)等。
 ```
 human:
   chat:
     api-key: ********************************
-    base-url: https://qianfan.baidubce.com/v2
+    base-url: https://api.deepseek.com/v1
     models:
       - title: DeepSeek-V3
-        value: deepseek-v3
+        value: deepseek-chat
       - title: DeepSeek-R1
-        value: deepseek-r1
+        value: deepseek-reasoner
 ```
 > 在网页使用麦克风录音时需使用HTTPS安全协议。  
 > 项目自带一个测试用的证书，您在使用中可以替换成您的证书或关闭server.ssl.enabled=false使用Nginx代理。
