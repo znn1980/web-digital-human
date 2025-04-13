@@ -55,7 +55,7 @@ server:
 ### 百度
 
 1、注册[百度AI开放平台](https://ai.baidu.com/)账户并完成实名认证。  
-2、创建[语音技术应用列表](https://console.bce.baidu.com/ai-engine/old/#/ai/speech/app/list)获取“API Key”与“Secret Key”。（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“secret-key”）  
+2、创建[语音技术应用列表](https://console.bce.baidu.com/ai-engine/old/#/ai/speech/app/list)获取“API Key”与“Secret Key”（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“secret-key”）。  
 3、申请[流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)试用（注：“流式文本语音合成”处于邀测阶段，需要申请试用）。  
 4、开通[千帆大模型](https://console.bce.baidu.com/qianfan/ais/console/onlineService)。  
 5、创建[API Key](https://console.bce.baidu.com/iam/#/iam/apikey/list)（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“base-url=<https://qianfan.baidubce.com/v2>”）。  
@@ -64,7 +64,7 @@ server:
 ### 阿里
 
 1、注册[阿里云](https://www.aliyun.com/)账户并完成实名认证。  
-2、创建[AccessKey](https://ram.console.aliyun.com/profile/access-keys)获取“AccessKey ID”与“AccessKey Secret”。（注：[application.yml](src/main/resources/application.yml)中的“access-key-id”与“access-key-secret”）  
+2、创建[AccessKey](https://ram.console.aliyun.com/profile/access-keys)获取“AccessKey ID”与“AccessKey Secret”（注：[application.yml](src/main/resources/application.yml)中的“access-key-id”与“access-key-secret”）。  
 3、开通[智能语音交互](https://ai.aliyun.com/nls)（注：“流式文本语音合成”没有免费试用）。  
 4、创建[智能语音交互项目](https://nls-portal.console.aliyun.com/applist)获取“Appkey”（注：[aliyun.asr.js](src/main/resources/static/human/aliyun.asr.js)与[aliyun.tts.js](src/main/resources/static/human/aliyun.tts.js)中的“app_key”）。  
 5、开通[阿里云百炼模型](https://bailian.console.aliyun.com/?tab=model#/model-market)。  
