@@ -4,14 +4,17 @@
 
 ## 设置
 
-> 项目中使用的[语音识别](https://ai.baidu.com/tech/speech)、[语音合成](https://ai.baidu.com/tech/speech/tts)是[百度AI开放平台](https://ai.baidu.com/)的产品，需要申请对应的[AK/SK](https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu)。  
+> 项目中使用的是[百度AI开放平台](https://ai.baidu.com/)与[阿里云](https://www.aliyun.com)的语音交互与对话服务，需要申请对应的百度[AK/SK](https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu)、阿里[AccessKey](https://help.aliyun.com/zh/isi/getting-started/start-here?spm=a2c4g.11186623.help-menu-30413.d_1_0.365dffd9eqpBH4&scm=20140722.H_72138._.OR_help-T_cn~zh-V_1)。
 ```
 human:
   baidu:
-    api-key: ************************  
+    api-key: ********************************
     secret-key: ********************************
+  aliyun:
+    access-key-id: ********************************
+    access-key-secret: ********************************
 ```
-> 项目中包含一个通用的对话接口,您可以使用所有厂家符合OpenAI接口规范的产品，如：[DeepSeek](https://api-docs.deepseek.com/zh-cn/)等。
+> 项目中包含一个通用的对话接口,您可以使用所有厂家符合OpenAI接口规范的产品，如：[百度千帆大模型](https://cloud.baidu.com/product-s/qianfan_home)、[阿里云百炼模型](https://bailian.console.aliyun.com)、[DeepSeek](https://api-docs.deepseek.com/zh-cn/)等。
 ```
 human:
   chat:
@@ -23,7 +26,7 @@ human:
       - title: DeepSeek-R1
         value: deepseek-reasoner
 ```
-> 在网页使用麦克风录音时需使用HTTPS安全协议。  
+> 在网页使用麦克风录音时需使用HTTPS安全协议。
 > 项目自带一个测试用的证书，您在使用中可以替换成您的证书或关闭server.ssl.enabled=false使用Nginx代理。
 ```
 server:
@@ -35,30 +38,29 @@ server:
 
 ## 语音识别
 
-[短语音识别标准版](https://ai.baidu.com/ai-doc/SPEECH/Jlbxdezuf)  
-[语音识别极速版](https://ai.baidu.com/ai-doc/SPEECH/4lbxdz34z)  
-[实时语音识别](https://ai.baidu.com/ai-doc/SPEECH/jlbxejt2i)  
+百度[语音识别极速版](https://ai.baidu.com/ai-doc/SPEECH/4lbxdz34z)
+阿里[一句话识别](https://help.aliyun.com/zh/isi/developer-reference/restful-api-2)
 
 ## 语音合成
- 
-[短文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/mlbxh7xie)  
-[长文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/ulbxh8rbu)  
-[流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)  
+
+百度[流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)
+阿里[流式文本语音合成](https://help.aliyun.com/zh/isi/developer-reference/streaming-text-tts-wss)
 
 ## 对话Chat
 
-[千帆大模型](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu)  
-[DeepSeek](https://api-docs.deepseek.com/zh-cn/guides/multi_round_chat)  
+[百度千帆大模型](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu)
+[阿里云百炼模型](https://bailian.console.aliyun.com)
+[DeepSeek](https://api-docs.deepseek.com/zh-cn/guides/multi_round_chat)
 
 ## 语音交互与对话服务申请步骤
 
 ### 百度
 
-1、注册[百度AI开放平台](https://ai.baidu.com/)账户并完成实名认证。  
-2、创建[语音技术应用列表](https://console.bce.baidu.com/ai-engine/old/#/ai/speech/app/list)获取“API Key”与“Secret Key”（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“secret-key”）。  
-3、申请[流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)试用（注：“流式文本语音合成”处于邀测阶段，需要申请试用）。  
-4、开通[千帆大模型](https://console.bce.baidu.com/qianfan/ais/console/onlineService)。  
-5、创建[API Key](https://console.bce.baidu.com/iam/#/iam/apikey/list)（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“base-url=<https://qianfan.baidubce.com/v2>”）。  
+1、注册[百度AI开放平台](https://ai.baidu.com/)账户并完成实名认证。
+2、创建[语音技术应用列表](https://console.bce.baidu.com/ai-engine/old/#/ai/speech/app/list)获取“API Key”与“Secret Key”（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“secret-key”）。
+3、申请[流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)试用（注：“流式文本在线合成”处于邀测阶段，需要申请试用）。
+4、开通[百度千帆大模型](https://console.bce.baidu.com/qianfan/ais/console/onlineService)。
+5、创建[API Key](https://console.bce.baidu.com/iam/#/iam/apikey/list)（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“base-url=<https://qianfan.baidubce.com/v2>”）。
 6、支持的[模型列表](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu)（注：[application.yml](src/main/resources/application.yml)中的“models”）。
 
 ### 阿里
