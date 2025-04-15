@@ -4,6 +4,7 @@
 
 ## 设置
 
+[application.yml](src/main/resources/application.yml)
 > 项目中使用的是[百度AI开放平台](https://ai.baidu.com/)与[阿里云](https://www.aliyun.com)的语音交互与对话服务，需要申请对应的百度[AK/SK](https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu)、阿里[AccessKey](https://help.aliyun.com/zh/isi/getting-started/start-here?spm=a2c4g.11186623.help-menu-30413.d_1_0.365dffd9eqpBH4&scm=20140722.H_72138._.OR_help-T_cn~zh-V_1)。
 ```
 human:
@@ -35,6 +36,45 @@ server:
     key-store: classpath:keystore.jks
     key-store-password: 123456
 ```
+### 场景
+
+[human.js](src/main/resources/static/human/human.js)  
+```
+scene: [
+    {title: '场景1', value: 'human/background/bg_1.png'},
+    {title: '场景2', value: 'human/background/bg_2.png'},
+    {title: '场景3', value: 'human/background/bg_3.png'},
+    {title: '场景4', value: 'human/background/bg_4.png'},
+    {title: '场景5', value: 'human/background/bg_5.png'},
+    {title: '场景6', value: 'human/background/bg_6.png'},
+    {title: '场景7', value: 'human/background/bg_7.png'}
+]
+```
+
+### 形象
+
+[human.js](src/main/resources/static/human/human.js)  
+> 形象分为存放数字人待机时的图片动画[standby](src/main/resources/static/human/xiaochuan/standby)目录，数字人说话时的图片动画[speak](src/main/resources/static/human/xiaochuan/speak)目录，数字人的头像图片[me.png](src/main/resources/static/human/xiaochuan/me.png)。
+```
+//名称、位置、待机帧数与间隔、说话帧数与间隔
+human: [
+    {
+        title: '小川', value: 'human/xiaochuan',
+        standby: {frame: 113, interval: 20},
+        speak: {frame: 186, interval: 30}
+    },
+    {
+        title: '关关', value: 'human/guanguan',
+        standby: {frame: 152, interval: 80},
+        speak: {frame: 114, interval: 60}
+    }
+]
+```
+
+### 音库
+
+【百度】[音色列表](https://ai.baidu.com/ai-doc/SPEECH/Rluv3uq3d)（注：[baidu.tts.js](src/main/resources/static/human/baidu.tts.js)）  
+【阿里】[音色列表](https://help.aliyun.com/zh/isi/developer-reference/overview-of-speech-synthesis?spm=a2c4g.11186623.help-menu-30413.d_3_1_0_0.26ff3c84Kc9rS3#5186fe1abb7ag)（注：[aliyun.tts.js](src/main/resources/static/human/aliyun.tts.js)）
 
 ## 语音识别
 
