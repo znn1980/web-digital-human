@@ -63,8 +63,8 @@ layui.define(function (exports) {
         },
         asr: function (blob, callback) {
             const loading = layui.layer.load(0);
-            const reader = new FileReader();
-            reader.onload = function (e) {
+            const fileReader = new FileReader();
+            fileReader.onload = function (e) {
                 console.log(e.target.result);
                 layui.$.post('baidu/speech/recognitions', {
                     vop: encodeURIComponent(e.target.result.split(',')[1])
@@ -81,11 +81,11 @@ layui.define(function (exports) {
                     layui.layer.msg(`语音识别请求异常，请重试！（${error || status}）`);
                 });
             };
-            reader.onerror = function () {
+            fileReader.onerror = function () {
                 layui.layer.close(loading);
-                layui.layer.msg(`读取录音文件失败！（${reader.error}）`);
+                layui.layer.msg(`读取录音文件失败！（${fileReader.error}）`);
             };
-            reader.readAsDataURL(blob);
+            fileReader.readAsDataURL(blob);
         }
     };
     exports('asr', $asr);

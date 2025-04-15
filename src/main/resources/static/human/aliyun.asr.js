@@ -2,7 +2,7 @@ layui.define(function (exports) {
     const $asr = {
         ws: null,
         task_id: null,
-        app_key: 'HgbUmJvwD7r8Zf3Q',
+        app_key: '',
         open: function (callback) {
             const loading = layui.layer.load(0);
             layui.$.get('aliyun/credentials', function (data) {
@@ -90,8 +90,8 @@ layui.define(function (exports) {
         },
         asr: function (blob, callback) {
             const loading = layui.layer.load(0);
-            const reader = new FileReader();
-            reader.onload = function (e) {
+            const fileReader = new FileReader();
+            fileReader.onload = function (e) {
                 console.log(e.target.result);
                 layui.$.post(`aliyun/speech/recognitions`, {
                     appKey: $asr.app_key,
@@ -109,11 +109,11 @@ layui.define(function (exports) {
                     layui.layer.msg(`语音识别请求异常，请重试！（${error || status}）`);
                 });
             };
-            reader.onerror = function () {
+            fileReader.onerror = function () {
                 layui.layer.close(loading);
-                layui.layer.msg(`读取录音文件失败！（${reader.error}）`);
+                layui.layer.msg(`读取录音文件失败！（${fileReader.error}）`);
             };
-            reader.readAsDataURL(blob);
+            fileReader.readAsDataURL(blob);
         }
     };
     exports('asr', $asr);

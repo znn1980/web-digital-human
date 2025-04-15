@@ -28,9 +28,14 @@ layui.define(function (exports) {
                 $tts.ws.onmessage = function (e) {
                     console.log(e.data);
                     if (e.data instanceof Blob) {
-                        e.data.arrayBuffer().then(buffer => {
-                            typeof callback === 'function' && callback(buffer);
-                        });
+                        const fileReader = new FileReader();
+                        fileReader.onload = function (e) {
+                            typeof callback === 'function' && callback(e.target.result);
+                        };
+                        fileReader.onerror = function () {
+                            console.log('读取语音失败:', fileReader.error);
+                        };
+                        fileReader.readAsArrayBuffer(e.data);
                     } else {
                         const data = JSON.parse(e.data);
                         if (data.type === 'system.started' && data.code === 0) {

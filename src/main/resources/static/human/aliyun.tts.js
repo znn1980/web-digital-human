@@ -2,7 +2,7 @@ layui.define(function (exports) {
     const $tts = {
         ws: null,
         task_id: null,
-        app_key: 'HgbUmJvwD7r8Zf3Q',
+        app_key: '',
         sound: [
             {title: '小云', value: 'xiaoyun'},
             {title: '小刚', value: 'xiaogang'}
