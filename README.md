@@ -38,30 +38,30 @@ server:
 
 ## 语音识别
 
-百度[语音识别极速版](https://ai.baidu.com/ai-doc/SPEECH/4lbxdz34z)
-阿里[一句话识别](https://help.aliyun.com/zh/isi/developer-reference/restful-api-2)
+【百度】[语音识别极速版](https://ai.baidu.com/ai-doc/SPEECH/4lbxdz34z)  
+【阿里】[一句话识别](https://help.aliyun.com/zh/isi/developer-reference/restful-api-2)  
 
 ## 语音合成
 
-百度[流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)
-阿里[流式文本语音合成](https://help.aliyun.com/zh/isi/developer-reference/streaming-text-tts-wss)
+【百度】[流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)  
+【阿里】[流式文本语音合成](https://help.aliyun.com/zh/isi/developer-reference/streaming-text-tts-wss)  
 
 ## 对话Chat
 
-[百度千帆大模型](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu)
-[阿里云百炼模型](https://bailian.console.aliyun.com)
-[DeepSeek](https://api-docs.deepseek.com/zh-cn/guides/multi_round_chat)
+[百度千帆大模型](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu)  
+[阿里云百炼模型](https://bailian.console.aliyun.com)  
+[DeepSeek](https://api-docs.deepseek.com/zh-cn/guides/multi_round_chat)  
 
 ## 语音交互与对话服务申请步骤
 
 ### 百度
 
-1、注册[百度AI开放平台](https://ai.baidu.com/)账户并完成实名认证。
-2、创建[语音技术应用列表](https://console.bce.baidu.com/ai-engine/old/#/ai/speech/app/list)获取“API Key”与“Secret Key”（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“secret-key”）。
-3、申请[流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)试用（注：“流式文本在线合成”处于邀测阶段，需要申请试用）。
-4、开通[百度千帆大模型](https://console.bce.baidu.com/qianfan/ais/console/onlineService)。
-5、创建[API Key](https://console.bce.baidu.com/iam/#/iam/apikey/list)（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“base-url=<https://qianfan.baidubce.com/v2>”）。
-6、支持的[模型列表](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu)（注：[application.yml](src/main/resources/application.yml)中的“models”）。
+1、注册[百度AI开放平台](https://ai.baidu.com/)账户并完成实名认证。  
+2、创建[语音技术应用列表](https://console.bce.baidu.com/ai-engine/old/#/ai/speech/app/list)获取“API Key”与“Secret Key”（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“secret-key”）。  
+3、申请[流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)试用（注：“流式文本在线合成”处于邀测阶段，需要申请试用）。  
+4、开通[百度千帆大模型](https://console.bce.baidu.com/qianfan/ais/console/onlineService)。  
+5、创建[API Key](https://console.bce.baidu.com/iam/#/iam/apikey/list)（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“base-url=<https://qianfan.baidubce.com/v2>”）。  
+6、支持的[模型列表](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu)（注：[application.yml](src/main/resources/application.yml)中的“models”）。  
 
 ### 阿里
 
