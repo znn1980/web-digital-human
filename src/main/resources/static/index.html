@@ -121,6 +121,7 @@
                 {title: '音库', child: layui.tts.sound}
             ],
             click: function (data) {
+                if (audioPlayer.isPlaying) return layui.layer.msg('正在播放，请先暂停！');
                 layui.human.scene.forEach(function (value) {
                     if (data.title === value.title) {
                         layui.$('body').css('background', `url(${data.value}) no-repeat center center`);
@@ -154,26 +155,17 @@
         });
 
         layui.$('#canvas').on('click', function () {
-            if (audioPlayer.isPlaying) {
-                layui.layer.msg('正在播放，请先暂停！');
-                return;
-            }
+            if (audioPlayer.isPlaying) return layui.layer.msg('正在播放，请先暂停！');
             layui.human.chat(`你好，我是${layui.human.me.title}。我可以如何帮到你？`, Date.now());
             layui.tts.open(function (blob) {
-                if (blob) {
-                    audioPlayer.onPush(blob);
-                    return;
-                }
+                if (blob) return audioPlayer.onPush(blob);
                 layui.tts.send(`你好，我是${layui.human.me.title}。我可以如何帮到你？`);
                 layui.tts.stop();
             });
         });
 
         layui.$('#mike').on('click', function () {
-            if (audioPlayer.isPlaying) {
-                layui.layer.msg('正在播放，请先暂停！');
-                return;
-            }
+            if (audioPlayer.isPlaying) return layui.layer.msg('正在播放，请先暂停！');
             const duration = 30;
             audioRecorder.open().then(function (stream) {
                 console.log('开始录音...');
@@ -206,19 +198,11 @@
         });
 
         layui.$('#release').on('click', function () {
-            if (layui.$('#text').val() === '') {
-                return;
-            }
-            if (audioPlayer.isPlaying) {
-                layui.layer.msg('正在播放，请先暂停！');
-                return;
-            }
+            if (layui.$('#text').val() === '') return layui.$('#text').focus();
+            if (audioPlayer.isPlaying) return layui.layer.msg('正在播放，请先暂停！');
             layui.human.chat(layui.$('#text').val());
             layui.tts.open(function (buffer) {
-                if (buffer) {
-                    audioPlayer.onPush(buffer);
-                    return;
-                }
+                if (buffer) return audioPlayer.onPush(buffer);
                 const messages = [];
                 const uuid = Date.now();
                 //const loading = layui.layer.load(0);
