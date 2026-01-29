@@ -167,7 +167,9 @@ layui.define(function (exports) {
             $human.response.messages = [];
             $human.request.messages.push({role: 'user', content: text});
             console.log($human.request);
+            $human.sse.abort = new AbortController();
             SSE.fetchEventSource('chat/completions', {
+                signal: $human.sse.abort.signal,
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify($human.request),
@@ -213,6 +215,14 @@ layui.define(function (exports) {
                 }
             });
         },
+        sse: {
+            abort: null,
+            close: function () {
+                if ($human.sse.abort) {
+                    $human.sse.abort.abort();
+                }
+            }
+        },
         models: function (callback) {
             layui.$.get('chat/models', function (data) {
                 $human.model = data;
@@ -223,6 +233,7 @@ layui.define(function (exports) {
             });
         }
     };
+
     exports('human', $human);
 });
 

@@ -13,6 +13,7 @@ layui.define(function (exports) {
             layui.$.get('baidu/credentials', function (data) {
                 $tts.ws = new WebSocket(`wss://aip.baidubce.com/ws/2.0/speech/publiccloudspeech/v1/tts?access_token=${data}&per=${$tts.voice}`);
                 $tts.ws.onopen = function () {
+                    layui.layer.close(loading);
                     $tts.start();
                 };
                 $tts.ws.onclose = function () {
@@ -55,6 +56,11 @@ layui.define(function (exports) {
                 layui.layer.close(loading);
                 layui.layer.msg(`语音合成请求异常，请重试！（${error || status}）`);
             });
+        },
+        close: function () {
+            if ($tts.ws) {
+                $tts.ws.close();
+            }
         },
         //spd【语速，取值 0-15，默认为 5】
         //pid【音调，取值 0-15，默认为 5】

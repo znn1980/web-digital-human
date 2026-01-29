@@ -7,6 +7,7 @@ layui.define(function (exports) {
             const loading = layui.layer.load(0);
             $asr.ws = new WebSocket(`wss://vop.baidu.com/realtime_asr?sn=${Date.now()}`);
             $asr.ws.onopen = function () {
+                layui.layer.close(loading);
                 $asr.start();
                 typeof callback === 'function' && callback(null, null);
             };
@@ -35,6 +36,11 @@ layui.define(function (exports) {
                     //layui.layer.msg(`语音识别失败！（${data.err_no}:${data.err_msg}）`);
                 }
             };
+        },
+        close: function () {
+            if ($asr.ws) {
+                $asr.ws.close();
+            }
         },
         start: function () {
             if ($asr.ws) {

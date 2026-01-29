@@ -15,6 +15,7 @@ layui.define(function (exports) {
                 $tts.ws = new WebSocket(`wss://nls-gateway-cn-beijing.aliyuncs.com/ws/v1?token=${data}`);
                 $tts.ws.binaryType = "arraybuffer";
                 $tts.ws.onopen = function () {
+                    layui.layer.close(loading);
                     if ($tts.ws.readyState === WebSocket.OPEN) {
                         $tts.task_id = $tts.uuid();
                         $tts.start();
@@ -53,6 +54,11 @@ layui.define(function (exports) {
                 layui.layer.close(loading);
                 layui.layer.msg(`语音合成请求异常，请重试！（${error || status}）`);
             });
+        },
+        close: function () {
+            if ($tts.ws) {
+                $tts.ws.close();
+            }
         },
         uuid: function () {
             let d1 = Date.now();

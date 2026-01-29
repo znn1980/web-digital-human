@@ -9,6 +9,7 @@ layui.define(function (exports) {
                 console.log(data);
                 $asr.ws = new WebSocket(`wss://nls-gateway.cn-shanghai.aliyuncs.com/ws/v1?token=${data}`);
                 $asr.ws.onopen = function () {
+                    layui.layer.close(loading);
                     $asr.task_id = $asr.uuid();
                     $asr.start();
                 };
@@ -49,6 +50,11 @@ layui.define(function (exports) {
                 layui.layer.close(loading);
                 layui.layer.msg(`语音识别请求异常，请重试！（${error || status}）`);
             });
+        },
+        close: function () {
+            if ($asr.ws) {
+                $asr.ws.close();
+            }
         },
         uuid: function () {
             return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
