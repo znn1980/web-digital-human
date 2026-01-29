@@ -218,7 +218,7 @@ layui.define(function (exports) {
                 $human.model = data;
                 $human.request.model = data[0].value;
                 typeof callback === 'function' && callback();
-            }).error(function (xhr, status, error) {
+            }).fail(function (xhr, status, error) {
                 layui.layer.msg(`模型请求异常，请重试！（${error || status}）`);
             });
         }

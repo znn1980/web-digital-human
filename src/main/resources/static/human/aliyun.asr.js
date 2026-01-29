@@ -45,7 +45,7 @@ layui.define(function (exports) {
                         //layui.layer.msg(`语音识别失败！（${data.header.status}:${data.header.status_text}）`);
                     }
                 };
-            }).error(function (xhr, status, error) {
+            }).fail(function (xhr, status, error) {
                 layui.layer.close(loading);
                 layui.layer.msg(`语音识别请求异常，请重试！（${error || status}）`);
             });
@@ -104,7 +104,7 @@ layui.define(function (exports) {
                         typeof callback === 'function' && callback(data.result);
                     }
                     layui.layer.close(loading);
-                }).error(function (xhr, status, error) {
+                }).fail(function (xhr, status, error) {
                     layui.layer.close(loading);
                     layui.layer.msg(`语音识别请求异常，请重试！（${error || status}）`);
                 });
