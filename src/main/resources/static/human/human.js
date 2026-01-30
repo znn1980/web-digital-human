@@ -40,10 +40,9 @@ layui.define(function (exports) {
         //大模型应答
         response: {messages: []},
         //初始化画布，并加载第一个数字人形象
-        init: function () {
-            const human = document.querySelector('#human');
+        init: function (human, canvas) {
             console.log(human.clientWidth + 'x' + human.clientHeight);
-            $human.canvas = document.querySelector('#canvas');
+            $human.canvas = canvas;
             $human.canvas.width = human.clientWidth;
             $human.canvas.height = human.clientHeight;
             $human.ctx = $human.canvas.getContext('2d');
@@ -168,12 +167,14 @@ layui.define(function (exports) {
             $human.request.messages.push({role: 'user', content: text});
             console.log($human.request);
             $human.sse.abort = new AbortController();
+            const loading = layui.layer.load(0);
             SSE.fetchEventSource('chat/completions', {
-                signal: $human.sse.abort.signal,
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify($human.request),
+                signal: $human.sse.abort.signal,
                 onopen: function (response) {
+                    layui.layer.close(loading);
                     console.log(response);
                     if (!response.ok) {
                         throw new Error(response.status + '-' + response.statusText);
@@ -203,10 +204,12 @@ layui.define(function (exports) {
                     }
                 },
                 onclose: function () {
+                    layui.layer.close(loading);
                     console.log('SSE关闭！');
                     typeof callback === 'function' && callback(true, null);
                 },
                 onerror: function (error) {
+                    layui.layer.close(loading);
                     console.log(error);
                     $human.request.messages.pop();
                     layui.layer.msg(`发送数据失败！（${error}）`);
