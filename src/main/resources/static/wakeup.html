@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <title>数字人（H5）</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="shortcut icon" type="image/x-icon" href="logo.png"/>
+    <link rel="stylesheet" href="layui/css/layui.css">
+    <link rel="stylesheet" href="layim/res/layim.css">
+    <link rel="stylesheet" href="human/human.css">
+</head>
+<body>
+<script src="human/fetch.event.source.js"></script>
+<script src="human/audio.media.js"></script>
+<script src="human/marked.min.js"></script>
+<script src="layui/layui.js"></script>
+<script>
+    layui.config({
+        base: 'human/',
+        version: Date.now()
+    }).extend({
+        human: '{/}human/human',
+    }).use(['human'], function () {
+
+        layui.human.request.model = 'deepseek-v3';
+        layui.human.init(layui.$('.human')[0], layui.$('canvas')[0]);
+
+        layui.$('canvas').on('click', function () {
+            layui.human.chat(`说出“你好”来唤醒我吧！`, Date.now());
+            asSpeak(`说出“你好”来唤醒我吧！`);
+        });
+
+        let listening = false, speaking = false;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const speechRecognition = new SpeechRecognition();
+        speechRecognition.continuous = true;
+        speechRecognition.interimResults = false;
+        speechRecognition.lang = 'zh-CN';
+        speechRecognition.onresult = (e) => {
+            const result = e.results[e.results.length - 1][0].transcript.trim();
+            console.log(result)
+            if (!result) return;
+            if (result.includes('你好')) {//唤醒词
+                if (!listening) {
+                    listening = true;
+                    layui.layer.msg('我在听，请说出您的指令。', {
+                        time: 1000 * 15, icon: 16, shade: 0.3, shadeClose: false
+                        , end: function () {
+                            listening = false;
+                        }
+                    });
+                }
+            } else if (listening) {
+                layui.layer.closeAll();
+                listening = true;
+                layui.human.chat(result);
+                const messages = [];
+                const uuid = Date.now();
+                layui.human.send(result, function (done, text) {
+                    if (done) {
+                        asSpeak(messages.join(''));
+                    }
+                    if (text && text !== '') {
+                        messages.push(text)
+                        layui.human.chat(marked.parse(messages.join('')), uuid);
+                    }
+                });
+            }
+        };
+        speechRecognition.onend = () => {
+            asWakeUp();
+        };
+        speechRecognition.onerror = (e) => {
+            console.error('语音识别错误:', e.error);
+            asWakeUp();
+        };
+        speechRecognition.start();
+
+        let speak = null;
+
+        function asSpeak(text) {
+            if (speak === null) {
+                if (listening) {
+                    window.speechSynthesis.cancel();
+                }
+                speechRecognition.stop();
+                speak = new SpeechSynthesisUtterance(text);
+                speak.lang = 'zh-CN';
+                speak.onstart = () => {
+                    layui.human.speak();
+                    speaking = true;
+                };
+                speak.onend = () => {
+                    layui.human.standby();
+                    speaking = false;
+                    speak = null;
+                    asWakeUp();
+                };
+                speak.onerror = () => {
+                    layui.human.standby();
+                    speaking = false;
+                    speak = null;
+                    asWakeUp();
+                };
+                window.speechSynthesis.speak(speak);
+                listening = false;
+            }
+        }
+
+        function asWakeUp() {
+            if (speaking) return;
+            console.log('停止唤醒...');
+            speechRecognition.stop();
+            if (!speaking) {
+                console.log('启动唤醒...');
+                speechRecognition.start();
+            }
+        }
+    });
+</script>
+<div class="container">
+    <div class="header"></div>
+    <div class="main">
+        <div class="human">
+            <div class="layim-chat-main layim-scrollbar">
+                <ul></ul>
+            </div>
+            <canvas></canvas>
+        </div>
+    </div>
+    <div class="footer"></div>
+</div>
+</body>
+</html>
