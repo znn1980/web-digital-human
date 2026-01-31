@@ -1,6 +1,6 @@
 # 数字人
 
-![演示](h5.gif)
+<video src="数字人.mp4"  controls="controls" width="440" height="668"></video>
 
 ## 设置
 
@@ -120,3 +120,5 @@ human: [
 ###  语音唤醒
 - [wakeup.html](src/main/resources/static/wakeup.html) 
 > 一个简单语音唤醒数字人的例子  
+
+<video src="数字人（语音唤醒）.mp4"  controls="controls" width="440" height="668"></video>
