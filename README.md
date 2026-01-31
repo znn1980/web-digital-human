@@ -134,7 +134,18 @@ human: [
 
 > 一个简单语音唤醒数字人的例子
 
-## 演示
+## 项目捐赠
+
+> 项目的发展离不开你的支持，请作者喝杯咖啡吧☕  
+
+<table>
+    <tr>
+        <td><img src="demo/wx.jpg" alt=""/></td>
+        <td><img src="demo/zfb.jpg" alt=""/></td>
+    </tr>
+</table>
+
+## 项目演示
 
 - [视频演示](demo/数字人.mp4)
 - [视频演示（语音唤醒）](demo/数字人（语音唤醒）.mp4)
