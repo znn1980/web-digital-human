@@ -1,5 +1,5 @@
-<h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">数字人</h1>
-<h4 align="center">基于语音识别、大模型对话（DeepSeek等）、语音合成技术，制作的数字人。</h4>
+<h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">AI数字人</h1>
+<h4 align="center">基于语音识别、大模型对话（DeepSeek等）、语音合成技术，制作的AI数字人。</h4>
 <p align="center"><img src="h5.gif" alt=""></p>
 
 ## 设置
