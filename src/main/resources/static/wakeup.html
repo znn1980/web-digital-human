@@ -22,11 +22,34 @@
         version: Date.now()
     }).extend({
         human: '{/}human/human',
-    }).use(['human'], function () {
+        wakeup: '{/}human/wakeup'
+    }).use(['human', 'wakeup'], function () {
 
         layui.human.init(layui.$('.human')[0], layui.$('canvas')[0], function () {
-            layui.$('canvas').trigger('click');
+            layui.wakeup.listen('你好', function (result) {
+                const messages = [], uuid = Date.now();
+                layui.human.chat(result);
+                layui.human.send(result, function (done, text) {
+                    if (done) {
+                        console.log('答：', messages.join(''));
+                        layui.wakeup.speak(messages.join(''), function () {
+                            layui.human.speak();
+                        }, function () {
+                            layui.human.standby();
+                        });
+                        layui.wakeup.listening = false;
+                    }
+                    if (text && text !== '') {
+                        messages.push(text)
+                        layui.human.chat(marked.parse(messages.join('')), uuid);
+                    }
+                });
+            });
+            setTimeout(function () {
+                layui.$('canvas').trigger('click');
+            }, 1000);
         });
+
         layui.human.models(function () {
             layui.dropdown.render({
                 elem: '.layui-icon-set',
@@ -51,99 +74,13 @@
         });
 
         layui.$('canvas').on('click', function () {
-            layui.human.chat(`你好，我是${layui.human.me.title}，说出“你好”来唤醒我吧！`, Date.now());
-            asSpeak(`你好，我是${layui.human.me.title}，说出“你好”来唤醒我吧！`);
+            layui.human.chat(`我是${layui.human.me.title}，说出“你好”来唤醒我吧！`, Date.now());
+            layui.wakeup.speak(`我是${layui.human.me.title}，说出“你好”来唤醒我吧！`, function () {
+                layui.human.speak();
+            }, function () {
+                layui.human.standby();
+            });
         });
-
-        let listening = false, speaking = false;
-        const speechRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        speechRecognition.continuous = true;
-        speechRecognition.interimResults = false;
-        speechRecognition.lang = 'zh-CN';
-        speechRecognition.onresult = (e) => {
-            const result = e.results[e.results.length - 1][0].transcript.trim();
-            console.log('语音识别：', result);
-            if (!result) return;
-            if (result.includes('你好')) {//唤醒词
-                if (!listening) {
-                    listening = true;
-                    layui.layer.msg('我在听，请说出您的指令。', {
-                        time: 1000 * 15, icon: 16, shade: 0.3, shadeClose: false
-                        , end: function () {
-                            listening = false;
-                            console.log('超时...');
-                        }
-                    });
-                }
-            } else if (listening) {
-                layui.layer.closeLast('dialog', function () {
-                    listening = true;
-                    console.log('问：', result);
-                    const messages = [], uuid = Date.now();
-                    layui.human.chat(result);
-                    layui.human.send(result, function (done, text) {
-                        if (done) {
-                            console.log('答：', messages.join(''));
-                            asSpeak(messages.join(''));
-                            listening = false;
-                        }
-                        if (text && text !== '') {
-                            messages.push(text)
-                            layui.human.chat(marked.parse(messages.join('')), uuid);
-                        }
-                    });
-                });
-            }
-        };
-        speechRecognition.onend = () => {
-            asResume();
-        };
-        speechRecognition.onerror = (e) => {
-            console.error('语音识别错误:', e.error);
-            asResume();
-        };
-        speechRecognition.start();
-
-        let speak = null;
-
-        function asSpeak(text) {
-            if (speak === null && text && text !== '') {
-                if (listening) {
-                    window.speechSynthesis.cancel();
-                }
-                speechRecognition.stop();
-                speak = new SpeechSynthesisUtterance(text);
-                speak.lang = 'zh-CN';
-                speak.onstart = () => {
-                    layui.human.speak();
-                    speaking = true;
-                };
-                speak.onend = () => {
-                    layui.human.standby();
-                    speaking = false;
-                    speak = null;
-                    asResume();
-                };
-                speak.onerror = (e) => {
-                    console.error('语音合成错误:', e.error);
-                    layui.human.standby();
-                    speaking = false;
-                    speak = null;
-                    asResume();
-                };
-                window.speechSynthesis.speak(speak);
-            }
-        }
-
-        function asResume() {
-            if (speaking) return;
-            console.log('停止唤醒...');
-            speechRecognition.stop();
-            if (!speaking) {
-                console.log('启动唤醒...');
-                speechRecognition.start();
-            }
-        }
     });
 </script>
 <div class="container">
