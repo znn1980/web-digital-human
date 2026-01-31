@@ -113,9 +113,10 @@ human: [
 - 创建[API-Key](https://bailian.console.aliyun.com/?tab=model#/api-key)（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“base-url=<https://dashscope.aliyuncs.com/compatible-mode/v1>”）。  
 - 支持的[模型列表](https://bailian.console.aliyun.com/?tab=doc#/doc/?type=model&url=https%3A%2F%2Fhelp.aliyun.com%2Fdocument_detail%2F2840914.html)（注：[application.yml](src/main/resources/application.yml)中的“models”）。
 
-## Web Speech API [浏览器兼容性](https://developer.mozilla.org/zh-CN/docs/Web/API/Web_Speech_API#浏览器兼容性)
-> [Web Speech API](https://developer.mozilla.org/zh-CN/docs/Web/API/Web_Speech_API) 使你能够将语音数据合并到 Web 应用程序中。  
-> [Web Speech API](https://developer.mozilla.org/zh-CN/docs/Web/API/Web_Speech_API) 有两个部分：[SpeechSynthesis](https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition) 语音合成（文本到语音 TTS）和 [SpeechRecognition](https://developer.mozilla.org/zh-CN/docs/Web/API/SpeechSynthesis) 语音识别（异步语音识别）。
+## Web Speech API [浏览器兼容性](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API#浏览器兼容性)
+> [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) 使你能够将语音数据合并到 Web 应用程序中。  
+> [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) 有两个部分：[SpeechSynthesis](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis) 语音合成（文本到语音 TTS）和 [SpeechRecognition](https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition) 语音识别（异步语音识别）。
 
-###  一个简单语音唤醒数字人的例子
+###  语音唤醒
 - [wakeup.html](src/main/resources/static/wakeup.html) 
+> 一个简单语音唤醒数字人的例子  

@@ -40,16 +40,16 @@ layui.define(function (exports) {
         //大模型应答
         response: {messages: []},
         //初始化画布，并加载第一个数字人形象
-        init: function (human, canvas) {
+        init: function (human, canvas, callback) {
             console.log(human.clientWidth + 'x' + human.clientHeight);
             $human.canvas = canvas;
             $human.canvas.width = human.clientWidth;
             $human.canvas.height = human.clientHeight;
             $human.ctx = $human.canvas.getContext('2d');
-            $human.load($human.human[0]);
+            $human.load($human.human[0], callback);
         },
         //加载数字人形象
-        load: function (human) {
+        load: function (human, callback) {
             $human.me = human;
             $human.stop();
             const loading = layui.layer.msg('数字人，加载中...', {
@@ -78,8 +78,9 @@ layui.define(function (exports) {
                     layui.$('#loading').html(`数字人，加载中...（${Math.round(length / frames.length * 100)}%）`);
                     if (length === frames.length) {
                         $human.draw($human.frames.standby[0]);
-                        layui.layer.close(loading);
                         $human.standby();
+                        layui.layer.close(loading);
+                        typeof callback === 'function' && callback();
                     }
                 });
             });
@@ -192,7 +193,8 @@ layui.define(function (exports) {
                                 content: $human.response.messages.join('')
                             });
                         }
-                        typeof callback === 'function' && callback(true, null);
+                        //与“onclose”重复执行
+                        //typeof callback === 'function' && callback(true, null);
                     }
                     if (msg.data.startsWith('{') && msg.data.endsWith('}')) {
                         const data = JSON.parse(msg.data);
@@ -210,7 +212,7 @@ layui.define(function (exports) {
                 },
                 onerror: function (error) {
                     layui.layer.close(loading);
-                    console.log(error);
+                    console.log('SSE异常！', error);
                     $human.request.messages.pop();
                     layui.layer.msg(`发送数据失败！（${error}）`);
                     typeof callback === 'function' && callback(true, null);
