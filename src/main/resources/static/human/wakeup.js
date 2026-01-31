@@ -1,5 +1,6 @@
 layui.define(function (exports) {
     const $wakeup = {
+        lang: 'zh-CN',
         listening: false,
         speaking: false,
         synthesis: null,
@@ -7,7 +8,7 @@ layui.define(function (exports) {
         listen: function (wakeup, callback) {
             $wakeup.recognition.continuous = true;
             $wakeup.recognition.interimResults = false;
-            $wakeup.recognition.lang = 'zh-CN';
+            $wakeup.recognition.lang = $wakeup.lang;
             $wakeup.recognition.onresult = (e) => {
                 const result = e.results[e.results.length - 1][0].transcript.trim();
                 console.log('语音识别：', result);
@@ -19,14 +20,13 @@ layui.define(function (exports) {
                             time: 1000 * 15, icon: 16, shade: 0.3, shadeClose: false
                             , end: function () {
                                 $wakeup.listening = false;
-                                console.log('超时...');
+                                console.log('我在听，超时...');
                             }
                         });
                     }
                 } else if (this.listening) {
                     layui.layer.closeLast('dialog', function () {
                         $wakeup.listening = true;
-                        console.log('问：', result);
                         typeof callback === 'function' && callback(result);
                     });
                 }
@@ -51,14 +51,14 @@ layui.define(function (exports) {
                 }
                 $wakeup.recognition.stop();
                 $wakeup.synthesis = new SpeechSynthesisUtterance(text);
-                $wakeup.synthesis.lang = 'zh-CN';
+                $wakeup.synthesis.lang = $wakeup.lang;
                 $wakeup.synthesis.onstart = () => {
-                    console.log('开始语音合成...');
+                    console.log('~~~开始语音合成~~~');
                     typeof start === 'function' && start();
                     $wakeup.speaking = true;
                 };
                 $wakeup.synthesis.onend = () => {
-                    console.log('结束语音合成...');
+                    console.log('~~~结束语音合成~~~');
                     typeof end === 'function' && end();
                     $wakeup.speaking = false;
                     $wakeup.synthesis = null;
