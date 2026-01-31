@@ -1,11 +1,13 @@
-# 数字人（[视频演示](数字人.mp4)）
-
-![演示](h5.gif)
+<h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">数字人</h1>
+<h4 align="center">基于语音识别、大模型对话（DeepSeek等）、语音合成技术，制作的数字人。</h4>
+<p align="center"><img src="h5.gif" alt=""></p>
 
 ## 设置
 
 - [application.yml](src/main/resources/application.yml)
+
 > 项目中使用的是[百度AI开放平台](https://ai.baidu.com/)与[阿里云](https://www.aliyun.com)的语音交互与对话服务，需要申请对应的百度[AK/SK](https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu)、阿里[AccessKey](https://help.aliyun.com/zh/isi/getting-started/start-here?spm=a2c4g.11186623.help-menu-30413.d_1_0.365dffd9eqpBH4&scm=20140722.H_72138._.OR_help-T_cn~zh-V_1)。
+
 ```
 human:
   baidu:
@@ -15,7 +17,9 @@ human:
     access-key-id: ********************************
     access-key-secret: ********************************
 ```
+
 > 项目中包含一个通用的对话接口,您可以使用所有厂家符合OpenAI接口规范的产品，如：[百度千帆大模型](https://cloud.baidu.com/product-s/qianfan_home)、[阿里云百炼模型](https://bailian.console.aliyun.com)、[DeepSeek](https://api-docs.deepseek.com/zh-cn/)等。
+
 ```
 human:
   chat:
@@ -27,8 +31,10 @@ human:
       - title: DeepSeek-R1
         value: deepseek-reasoner
 ```
+
 > 在网页使用麦克风录音时需使用HTTPS安全协议。
 > 项目自带一个测试用的证书，您在使用中可以替换成您的证书或关闭server.ssl.enabled=false使用Nginx代理。
+
 ```
 server:
   ssl:
@@ -36,9 +42,11 @@ server:
     key-store: classpath:keystore.jks
     key-store-password: 123456
 ```
+
 ### 场景
 
-- [human.js](src/main/resources/static/human/human.js)  
+- [human.js](src/main/resources/static/human/human.js)
+
 ```
 scene: [
     {title: '场景1', value: 'human/background/bg_1.png'},
@@ -53,8 +61,10 @@ scene: [
 
 ### 形象
 
-- [human.js](src/main/resources/static/human/human.js)  
+- [human.js](src/main/resources/static/human/human.js)
+
 > 形象分为存放数字人待机时的图片动画[standby](src/main/resources/static/human/xiaochuan/standby)目录，数字人说话时的图片动画[speak](src/main/resources/static/human/xiaochuan/speak)目录，数字人的头像图片[me.png](src/main/resources/static/human/xiaochuan/me.png)。
+
 ```
 //名称、位置、待机帧数与间隔、说话帧数与间隔
 human: [
@@ -73,50 +83,81 @@ human: [
 
 ### 音库
 
-- 【百度】[音色列表](https://ai.baidu.com/ai-doc/SPEECH/Rluv3uq3d)（注：[baidu.tts.js](src/main/resources/static/human/baidu.tts.js)）  
+- 【百度】[音色列表](https://ai.baidu.com/ai-doc/SPEECH/Rluv3uq3d)（注：[baidu.tts.js](src/main/resources/static/human/baidu.tts.js)）
 - 【阿里】[音色列表](https://help.aliyun.com/zh/isi/developer-reference/overview-of-speech-synthesis?spm=a2c4g.11186623.help-menu-30413.d_3_1_0_0.26ff3c84Kc9rS3#5186fe1abb7ag)（注：[aliyun.tts.js](src/main/resources/static/human/aliyun.tts.js)）
 
 ## 语音识别
 
-- 【百度】[语音识别极速版](https://ai.baidu.com/ai-doc/SPEECH/4lbxdz34z)  
-- 【阿里】[一句话识别](https://help.aliyun.com/zh/isi/developer-reference/restful-api-2)  
+- 【百度】[语音识别极速版](https://ai.baidu.com/ai-doc/SPEECH/4lbxdz34z)
+- 【阿里】[一句话识别](https://help.aliyun.com/zh/isi/developer-reference/restful-api-2)
 
 ## 语音合成
 
-- 【百度】[流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)  
-- 【阿里】[流式文本语音合成](https://help.aliyun.com/zh/isi/developer-reference/streaming-text-tts-wss)  
+- 【百度】[流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)
+- 【阿里】[流式文本语音合成](https://help.aliyun.com/zh/isi/developer-reference/streaming-text-tts-wss)
 
 ## 对话Chat
 
-- [百度千帆大模型](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu)  
-- [阿里云百炼模型](https://bailian.console.aliyun.com)  
-- [DeepSeek](https://api-docs.deepseek.com/zh-cn/guides/multi_round_chat)  
+- [百度千帆大模型](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu)
+- [阿里云百炼模型](https://bailian.console.aliyun.com)
+- [DeepSeek](https://api-docs.deepseek.com/zh-cn/guides/multi_round_chat)
 
 ## 语音交互与对话服务申请步骤
 
 ### 百度
 
-- 注册[百度AI开放平台](https://ai.baidu.com/)账户并完成实名认证。  
-- 创建[语音技术应用列表](https://console.bce.baidu.com/ai-engine/old/#/ai/speech/app/list)获取“API Key”与“Secret Key”（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“secret-key”）。  
+- 注册[百度AI开放平台](https://ai.baidu.com/)账户并完成实名认证。
+- 创建[语音技术应用列表](https://console.bce.baidu.com/ai-engine/old/#/ai/speech/app/list)获取“API Key”与“Secret Key”（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“secret-key”）。
 - ~~申请[流式文本在线合成](https://ai.baidu.com/ai-doc/SPEECH/lm5xd63rn)试用（注：“流式文本在线合成”处于邀测阶段，需要申请试用）。~~
-- 开通[百度千帆大模型](https://console.bce.baidu.com/qianfan/ais/console/onlineService)。  
-- 创建[API Key](https://console.bce.baidu.com/iam/#/iam/apikey/list)（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“base-url=<https://qianfan.baidubce.com/v2>”）。  
-- 支持的[模型列表](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu)（注：[application.yml](src/main/resources/application.yml)中的“models”）。  
+- 开通[百度千帆大模型](https://console.bce.baidu.com/qianfan/ais/console/onlineService)。
+- 创建[API Key](https://console.bce.baidu.com/iam/#/iam/apikey/list)（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“base-url=<https://qianfan.baidubce.com/v2>”）。
+- 支持的[模型列表](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu)（注：[application.yml](src/main/resources/application.yml)中的“models”）。
 
 ### 阿里
 
-- 注册[阿里云](https://www.aliyun.com/)账户并完成实名认证。  
-- 创建[AccessKey](https://ram.console.aliyun.com/profile/access-keys)获取“AccessKey ID”与“AccessKey Secret”（注：[application.yml](src/main/resources/application.yml)中的“access-key-id”与“access-key-secret”）。  
-- 开通[智能语音交互](https://ai.aliyun.com/nls)（注：“流式文本语音合成”没有免费试用）。  
-- 创建[智能语音交互项目](https://nls-portal.console.aliyun.com/applist)获取“Appkey”（注：[aliyun.asr.js](src/main/resources/static/human/aliyun.asr.js)与[aliyun.tts.js](src/main/resources/static/human/aliyun.tts.js)中的“app_key”）。  
-- 开通[阿里云百炼模型](https://bailian.console.aliyun.com/?tab=model#/model-market)。  
-- 创建[API-Key](https://bailian.console.aliyun.com/?tab=model#/api-key)（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“base-url=<https://dashscope.aliyuncs.com/compatible-mode/v1>”）。  
+- 注册[阿里云](https://www.aliyun.com/)账户并完成实名认证。
+- 创建[AccessKey](https://ram.console.aliyun.com/profile/access-keys)获取“AccessKey ID”与“AccessKey Secret”（注：[application.yml](src/main/resources/application.yml)中的“access-key-id”与“access-key-secret”）。
+- 开通[智能语音交互](https://ai.aliyun.com/nls)（注：“流式文本语音合成”没有免费试用）。
+- 创建[智能语音交互项目](https://nls-portal.console.aliyun.com/applist)获取“Appkey”（注：[aliyun.asr.js](src/main/resources/static/human/aliyun.asr.js)与[aliyun.tts.js](src/main/resources/static/human/aliyun.tts.js)中的“app_key”）。
+- 开通[阿里云百炼模型](https://bailian.console.aliyun.com/?tab=model#/model-market)。
+- 创建[API-Key](https://bailian.console.aliyun.com/?tab=model#/api-key)（注：[application.yml](src/main/resources/application.yml)中的“api-key”与“base-url=<https://dashscope.aliyuncs.com/compatible-mode/v1>”）。
 - 支持的[模型列表](https://bailian.console.aliyun.com/?tab=doc#/doc/?type=model&url=https%3A%2F%2Fhelp.aliyun.com%2Fdocument_detail%2F2840914.html)（注：[application.yml](src/main/resources/application.yml)中的“models”）。
 
 ## Web Speech API（[浏览器兼容性](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API#浏览器兼容性)）
+
 > [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) 使你能够将语音数据合并到 Web 应用程序中。  
 > [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) 有两个部分：[SpeechSynthesis](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis) 语音合成（文本到语音 TTS）和 [SpeechRecognition](https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition) 语音识别（异步语音识别）。
 
-###  语音唤醒（[视频演示](数字人（语音唤醒）.mp4)）
-- [wakeup.html](src/main/resources/static/wakeup.html) 
-> 一个简单语音唤醒数字人的例子  
+### 语音唤醒
+
+- [wakeup.html](src/main/resources/static/wakeup.html)
+
+> 一个简单语音唤醒数字人的例子
+
+## 演示
+
+- [视频演示](demo/数字人.mp4)
+- [视频演示（语音唤醒）](demo/数字人（语音唤醒）.mp4)
+
+<table>
+    <tr>
+        <td><img src="demo/数字人1.png" alt=""/></td>
+        <td><img src="demo/数字人2.png" alt=""/></td>
+    </tr>
+    <tr>
+        <td><img src="demo/数字人3.png" alt=""/></td>
+        <td><img src="demo/数字人4.png" alt=""/></td>
+    </tr>
+    <tr>
+        <td><img src="demo/数字人5.png" alt=""/></td>
+        <td><img src="demo/数字人6.png" alt=""/></td>
+    </tr>
+    <tr>
+        <td><img src="demo/数字人7.png" alt=""/></td>
+        <td><img src="demo/数字人8.png" alt=""/></td>
+    </tr>
+    <tr>
+        <td><img src="demo/数字人9.png" alt=""/></td>
+        <td><img src="demo/数字人10.png" alt=""/></td>
+    </tr>
+</table>
