@@ -3,9 +3,9 @@ layui.define(function (exports) {
         lang: 'zh-CN',
         listening: false,
         speaking: false,
-        synthesis: null,
+        synthesis: new SpeechSynthesisUtterance(),
         recognition: new (window.SpeechRecognition || window.webkitSpeechRecognition)(),
-        listen: function (wakeup, callback) {
+        listen: function (keywords, callback) {
             $wakeup.recognition.continuous = true;
             $wakeup.recognition.interimResults = false;
             $wakeup.recognition.lang = $wakeup.lang;
@@ -13,7 +13,7 @@ layui.define(function (exports) {
                 const result = e.results[e.results.length - 1][0].transcript.trim();
                 console.log('语音识别：', result);
                 if (!result) return;
-                if (result.includes(wakeup)) {//唤醒词
+                if (keywords.some(keyword => result.includes(keyword))) {//唤醒词
                     if (!$wakeup.listening) {
                         $wakeup.listening = true;
                         layui.layer.msg('我在听，请说出您的问题。', {
@@ -45,31 +45,32 @@ layui.define(function (exports) {
             $wakeup.recognition.start();
         },
         speak: function (text, start, end) {
-            if ($wakeup.synthesis === null && text && text !== '') {
+            if (!$wakeup.speaking && text && text !== '') {
                 if ($wakeup.listening) {
                     window.speechSynthesis.cancel();
                 }
+                $wakeup.speaking = true;
+                $wakeup.listening = false;
                 $wakeup.recognition.stop();
-                $wakeup.synthesis = new SpeechSynthesisUtterance(text);
+                $wakeup.synthesis.text = text;
                 $wakeup.synthesis.lang = $wakeup.lang;
                 $wakeup.synthesis.onstart = () => {
                     console.log('~~~开始语音合成~~~');
-                    typeof start === 'function' && start();
                     $wakeup.speaking = true;
+                    $wakeup.listening = false;
+                    typeof start === 'function' && start();
                 };
                 $wakeup.synthesis.onend = () => {
                     console.log('~~~结束语音合成~~~');
-                    typeof end === 'function' && end();
                     $wakeup.speaking = false;
-                    $wakeup.synthesis = null;
                     $wakeup.resume();
+                    typeof end === 'function' && end();
                 };
                 $wakeup.synthesis.onerror = (e) => {
                     console.error('语音合成错误:', e.error);
-                    typeof end === 'function' && end();
                     $wakeup.speaking = false;
-                    $wakeup.synthesis = null;
                     $wakeup.resume();
+                    typeof end === 'function' && end();
                 };
                 window.speechSynthesis.speak($wakeup.synthesis);
             }
@@ -80,6 +81,10 @@ layui.define(function (exports) {
             if (!$wakeup.speaking) {
                 $wakeup.recognition.start();
             }
+        },
+        cancel: function () {
+            window.speechSynthesis.cancel();
+            $wakeup.listening = false;
         }
     };
 

@@ -26,7 +26,8 @@
     }).use(['human', 'wakeup'], function () {
 
         layui.human.init(layui.$('.human')[0], layui.$('canvas')[0], function () {
-            layui.wakeup.listen('你好', function (result) {
+            layui.human.chat(`我是${layui.human.me.title}，说出“你好”来唤醒我吧！`, Date.now());
+            layui.wakeup.listen(['你好', `${layui.human.me.title}`], function (result) {
                 console.log('问：', result);
                 layui.human.chat(result);
                 const messages = [], uuid = Date.now() + 1000;
@@ -38,7 +39,6 @@
                         }, function () {
                             layui.human.standby();
                         });
-                        layui.wakeup.listening = false;
                     }
                     if (text && text !== '') {
                         messages.push(text)
@@ -46,9 +46,6 @@
                     }
                 });
             });
-            setTimeout(function () {
-                layui.$('canvas').trigger('click');
-            }, 1000);
         });
 
         layui.human.models(function () {
@@ -82,10 +79,17 @@
                 layui.human.standby();
             });
         });
+
+        layui.$('.layui-icon-pause').on('click', function () {
+            layui.human.sse.close();
+            layui.wakeup.cancel();
+        });
+
     });
 </script>
 <div class="container">
     <div class="header">
+        <a href="javascript:" class="layui-icon layui-icon-pause"></a>
         <a href="javascript:" class="layui-icon layui-icon-set"></a>
     </div>
     <div class="main">
