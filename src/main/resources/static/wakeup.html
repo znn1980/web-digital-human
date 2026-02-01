@@ -49,7 +49,7 @@
         });
 
         layui.human.models(function () {
-            layui.dropdown.render({
+            const set = layui.dropdown.render({
                 elem: '.layui-icon-set',
                 data: [
                     {title: '场景', child: layui.human.scene},
@@ -67,7 +67,16 @@
                             layui.human.request.model = layui.human.model[index].value;
                         }
                     });
+                    layui.wakeup.voices.forEach(function (value) {
+                        if (data.title === value.name) {
+                            layui.wakeup.voice = value;
+                        }
+                    });
                 }
+            });
+            layui.wakeup.getVoices(function (sound) {
+                set.config.data.push({title: '音库', child: sound});
+                layui.dropdown.reloadData(set.config.id, {data: set.config.data});
             });
         });
 

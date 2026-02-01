@@ -1,6 +1,8 @@
 layui.define(function (exports) {
     const $wakeup = {
         lang: 'zh-CN',
+        voices: [],
+        voice: null,
         listening: false,
         speaking: false,
         synthesis: new SpeechSynthesisUtterance(),
@@ -54,6 +56,7 @@ layui.define(function (exports) {
                 $wakeup.recognition.stop();
                 $wakeup.synthesis.text = text;
                 $wakeup.synthesis.lang = $wakeup.lang;
+                if ($wakeup.voice) $wakeup.synthesis.voice = $wakeup.voice;
                 $wakeup.synthesis.onstart = () => {
                     console.log('~~~开始语音合成~~~');
                     $wakeup.speaking = true;
@@ -85,6 +88,19 @@ layui.define(function (exports) {
         cancel: function () {
             window.speechSynthesis.cancel();
             $wakeup.listening = false;
+        },
+        getVoices: function (callback) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices().forEach(voice => {
+                    if (voice.localService && voice.lang === $wakeup.lang) {
+                        if (!$wakeup.voices.some(value => value.name === voice.name)) {
+                            $wakeup.voices.push(voice);
+                        }
+                    }
+                });
+                const sound = $wakeup.voices.map(voice => ({title: voice.name, value: voice.name}));
+                typeof callback === 'function' && callback(sound);
+            }
         }
     };
 
