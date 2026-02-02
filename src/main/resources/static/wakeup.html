@@ -34,6 +34,7 @@
                 layui.human.send(result, function (done, text) {
                     if (done) {
                         console.log('答：', messages.join(''));
+                        //全部文字一起转语音
                         layui.wakeup.speak(messages.join(''), function () {
                             layui.human.speak();
                         }, function () {
@@ -43,6 +44,7 @@
                     if (text && text !== '') {
                         messages.push(text)
                         layui.human.chat(marked.parse(messages.join('')), uuid);
+                        //拼接成完整的句子在转语音
                     }
                 });
             });

@@ -15,17 +15,18 @@ layui.define(function (exports) {
                 const result = e.results[e.results.length - 1][0].transcript.trim();
                 console.log('语音识别：', result);
                 if (!result) return;
-                if (keywords.some(keyword => result.includes(keyword))) {//唤醒词
-                    if (!$wakeup.listening) {
-                        $wakeup.listening = true;
-                        layui.layer.msg('我在听，请说出您的问题。', {
-                            time: 1000 * 15, icon: 16, shade: 0.3, shadeClose: false
-                            , end: function () {
-                                $wakeup.listening = false;
-                                console.log('我在听，超时...');
-                            }
-                        });
-                    }
+                //唤醒词匹配 1.其中一个匹配 2.全部匹配
+                //keywords.some(keyword => result.includes(keyword))
+                //keywords.every(keyword => result.includes(keyword))
+                if (!$wakeup.listening && keywords.some(keyword => result.includes(keyword))) {//唤醒词
+                    $wakeup.listening = true;
+                    layui.layer.msg('我在听，请说出您的问题。', {
+                        time: 1000 * 15, icon: 16, shade: 0.3, shadeClose: false
+                        , end: function () {
+                            $wakeup.listening = false;
+                            console.log('我在听，超时...');
+                        }
+                    });
                 } else if (this.listening) {
                     layui.layer.closeLast('dialog', function () {
                         $wakeup.listening = true;
