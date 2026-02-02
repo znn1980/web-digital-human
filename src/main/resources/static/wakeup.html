@@ -35,17 +35,22 @@
                     if (done) {
                         console.log('答：', messages.join(''));
                         //全部文字一起转语音
-                        layui.wakeup.speak(messages.join(''), function () {
+                        /*layui.wakeup.speak(messages.join(''), function () {
                             layui.human.speak();
                         }, function () {
                             layui.human.standby();
-                        });
+                        });*/
                     }
                     if (text && text !== '') {
                         messages.push(text)
                         layui.human.chat(marked.parse(messages.join('')), uuid);
-                        //拼接成完整的句子在转语音
                     }
+                    //SSE异步结果拼接成完整的句子就先转一句语音
+                    layui.wakeup.say(done, text, function () {
+                        layui.human.speak();
+                    }, function () {
+                        layui.human.standby();
+                    });
                 });
             });
         });
