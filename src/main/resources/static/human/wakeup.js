@@ -7,7 +7,7 @@ layui.define(function (exports) {
         speaking: false,
         synthesis: new SpeechSynthesisUtterance(),
         recognition: new (window.SpeechRecognition || window.webkitSpeechRecognition)(),
-        listen: function (keywords, callback) {
+        listen: function (keywords, timeout, callback) {
             $wakeup.recognition.continuous = true;
             $wakeup.recognition.interimResults = false;
             $wakeup.recognition.lang = $wakeup.lang;
@@ -21,7 +21,7 @@ layui.define(function (exports) {
                 if (!$wakeup.listening && keywords.some(keyword => result.includes(keyword))) {//唤醒词
                     $wakeup.listening = true;
                     layui.layer.msg('我在听，请说出您的问题。', {
-                        time: 1000 * 15, icon: 16, shade: 0.3, shadeClose: false
+                        time: timeout, icon: 16, shade: 0.3, shadeClose: false
                         , end: function () {
                             $wakeup.listening = false;
                             console.log('我在听，超时...');

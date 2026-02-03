@@ -36,7 +36,7 @@
                 layui.human.standby();
             });
 
-        layui.human.init(layui.$('.human')[0], layui.$('canvas')[0],function () {
+        layui.human.init(layui.$('.human')[0], layui.$('canvas')[0], function () {
             layui.human.chat(`你好，我是${layui.human.me.title}。我可以如何帮到你？`, Date.now());
         });
 
@@ -98,21 +98,16 @@
                         console.log('停止录音...');
                         const blob = audioRecorder.pcm();
                         layui.asr.asr(blob, function (text) {
-                            if (text && text !== '') {
-                                layui.$('input').val(text);
-                                layui.$('.layui-icon-release').trigger('click');
-                            } else {
-                                layui.layer.msg('我没有听清你在说些什么！');
-                            }
+                            if (!text || text === '') return layui.layer.msg('我没有听清你在说些什么！');
+                            layui.$('input').val(text);
+                            layui.$('.layui-icon-release').trigger('click');
                         });
                     }
                 });
                 audioRecorder.start(stream, function (params) {
                     console.log(params);
                     layui.$('#loading').html('录音中...（' + (duration - parseInt(params.duration)) + '秒）按下停止');
-                    if (params.duration > duration) {
-                        layui.layer.close(loading);
-                    }
+                    if (params.duration > duration) layui.layer.close(loading);
                 });
             }, function (error) {
                 layui.layer.msg(`麦克风打开失败！（${error.name}:${error.message}）`);
@@ -125,8 +120,7 @@
             layui.human.chat(layui.$('input').val());
             layui.tts.open(function (buffer) {
                 if (buffer) return audioPlayer.onPush(buffer);
-                const messages = [];
-                const uuid = Date.now();
+                const messages = [], uuid = Date.now() + 1000;
                 layui.human.send(layui.$('input').val(), function (done, text) {
                     if (done) layui.tts.stop();
                     if (text && text !== '') {
