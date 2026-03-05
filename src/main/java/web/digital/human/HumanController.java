@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -47,21 +48,20 @@ public class HumanController {
      */
     @PostMapping(value = "/chat/completions", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> chatCompletions(@RequestBody ChatRequest request) {
+        if (ObjectUtils.isEmpty(request.model)) {
+            request.model = this.properties.getChat().getModels().get(0).getValue();
+        }
+        request.stream = true;
+        LOGGER.info("问：{}", request);
         return this.webClient.post()
                 .uri(this.properties.getChat().getBaseUrl() + "/chat/completions")
                 .header("Authorization", String.format("Bearer %s", this.properties.getChat().getApiKey()))
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request).retrieve().bodyToFlux(String.class)
-                .doOnNext(s -> {
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("对话：{}", s);
-                    }
-                })
+                .doOnNext(s -> LOGGER.info("答：{}", s))
                 .onErrorResume(e -> {
-                    if (LOGGER.isErrorEnabled()) {
-                        LOGGER.error("对话：{}", e.getMessage(), e);
-                    }
+                    LOGGER.error("答：{}", e.getMessage(), e);
                     return Flux.empty();
                 });
     }
@@ -73,15 +73,11 @@ public class HumanController {
     @GetMapping(value = "/aliyun/credentials", produces = MediaType.TEXT_PLAIN_VALUE)
     public Mono<String> token() {
         return this.refreshToken().map(token -> {
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("【阿里云】TOKEN：{} - {}", token.getId(), new Date(token.getExpireTime()));
-                    }
+                    LOGGER.info("【阿里云】TOKEN：{} - {}", token.getId(), new Date(token.getExpireTime()));
                     return token.getId();
                 })
                 .onErrorResume(e -> {
-                    if (LOGGER.isErrorEnabled()) {
-                        LOGGER.error("【阿里云】TOKEN：{}", e.getMessage(), e);
-                    }
+                    LOGGER.error("【阿里云】TOKEN：{}", e.getMessage(), e);
                     return Mono.empty();
                 });
     }
@@ -101,15 +97,9 @@ public class HumanController {
                                 .header("Host", "nls-gateway-cn-shanghai.aliyuncs.com")
                                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                                 .bodyValue(bytes).retrieve().bodyToMono(String.class)))
-                .doOnNext(s -> {
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("【阿里云】语音识别：{}", s);
-                    }
-                })
+                .doOnNext(s -> LOGGER.info("【阿里云】语音识别：{}", s))
                 .onErrorResume(e -> {
-                    if (LOGGER.isErrorEnabled()) {
-                        LOGGER.error("【阿里云】语音识别：{}", e.getMessage(), e);
-                    }
+                    LOGGER.error("【阿里云】语音识别：{}", e.getMessage(), e);
                     return Mono.empty();
                 });
     }
@@ -121,15 +111,11 @@ public class HumanController {
     @GetMapping(value = "/baidu/credentials", produces = MediaType.TEXT_PLAIN_VALUE)
     public Mono<String> credentials() {
         return this.refreshCredentials().map(credentials -> {
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("【百度】TOKEN：{} - {}", credentials.getAccessToken(), new Date(credentials.getExpiresIn()));
-                    }
+                    LOGGER.info("【百度】TOKEN：{} - {}", credentials.getAccessToken(), new Date(credentials.getExpiresIn()));
                     return credentials.getAccessToken();
                 })
                 .onErrorResume(e -> {
-                    if (LOGGER.isErrorEnabled()) {
-                        LOGGER.error("【百度】TOKEN：{}", e.getMessage(), e);
-                    }
+                    LOGGER.error("【百度】TOKEN：{}", e.getMessage(), e);
                     return Mono.empty();
                 });
     }
@@ -150,15 +136,9 @@ public class HumanController {
                                 .accept(MediaType.APPLICATION_JSON)
                                 .contentType(MediaType.parseMediaType("audio/pcm;rate=16000"))
                                 .bodyValue(bytes).retrieve().bodyToMono(String.class)))
-                .doOnNext(s -> {
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("【百度】语音识别：{}", s);
-                    }
-                })
+                .doOnNext(s -> LOGGER.info("【百度】语音识别：{}", s))
                 .onErrorResume(e -> {
-                    if (LOGGER.isErrorEnabled()) {
-                        LOGGER.error("【百度】语音识别：{}", e.getMessage(), e);
-                    }
+                    LOGGER.error("【百度】语音识别：{}", e.getMessage(), e);
                     return Mono.empty();
                 });
     }
@@ -232,19 +212,18 @@ public class HumanController {
         public boolean stream;
         public List<Message> messages;
 
-        public ChatRequest() {
-            this.model = null;
-            this.stream = false;
-            this.messages = null;
+        @Override
+        public String toString() {
+            return String.format("{model=%s,stream=%s,messages=%s}", this.model, this.stream, this.messages);
         }
 
         static class Message {
             public String role;
             public String content;
 
-            public Message() {
-                this.role = null;
-                this.content = null;
+            @Override
+            public String toString() {
+                return String.format("{role=%s,content=%s}", this.role, this.content);
             }
         }
     }
