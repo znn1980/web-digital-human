@@ -37,7 +37,7 @@ public class ChatTools {
         sb.append("附近").append(km).append("公里的酒店：\n");
         ((ArrayList<?>) new ObjectMapper()
                 .readValue(FileCopyUtils.copyToByteArray(this.getClass()
-                        .getResourceAsStream("/static/json/hotels.json")), Map.class)
+                        .getResourceAsStream("/static/ai-hotels/hotels.json")), Map.class)
                 .get("data")).forEach(data -> {
             sb.append("名称：").append(((Map<?, ?>) data).get("name")).append("\n");
             sb.append("地址：").append(((Map<?, ?>) data).get("address")).append("\n");

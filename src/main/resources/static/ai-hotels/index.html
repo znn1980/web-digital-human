@@ -97,10 +97,9 @@
     }).use(['layim'], function () {
 
         let abortController, conversationId = asUuid()
-            , roleSystem = `我是一家酒店，名字是{name}，位于{address}。
-            我还是一位经验丰富的酒店管理系统AI助手，
-            拥有10年以上的高端酒店管理经验，
-            精通前厅、客房、餐饮、财务、人力资源、市场营销等全方位酒店运营管理。`;
+            , roleSystem = '我是一家酒店，名字是{name}，位于{address}。' +
+            '我还是一位经验丰富的酒店管理系统AI助手，' +
+            '拥有10年以上的高端酒店管理经验，精通前厅、客房、餐饮、财务、人力资源、市场营销等全方位酒店运营管理。';
 
         layui.layim.on('sendMessage', function (data) {
             console.log('sendMessage => ', data);
