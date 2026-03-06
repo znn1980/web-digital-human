@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>墨历V酒店</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="shortcut icon" type="image/x-icon" href="hotel.png"/>
+    <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="../layim/res/layim.css" media="all">
+    <style>
+        body,
+        html,
+        #all-map {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            margin: 0;
+            position: absolute;
+        }
+
+        #all-hotels {
+            width: 201px;
+            top: 10px;
+            left: 10px;
+            z-index: 999990;
+            overflow: hidden;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+<div id="all-map"></div>
+<div id="all-hotels">
+    <table id="all-hotels-table" class="layui-table" lay-options="{size:'sm',skin:'nob'}">
+        <thead>
+        <tr>
+            <th lay-options="{field:'name',width:120,templet:'<div><span title=\'{{= d.address }}\'>{{= d.name }}</span></div>'}">酒店</th>
+            <th lay-options="{field:'price',width:80,templet:'<div>￥{{= d.price }}</div>'}">参考价</th>
+        </tr>
+        </thead>
+    </table>
+</div>
+<script src="../human/fetch.event.source.js"></script>
+<script src="../human/markdown-it.min.js"></script>
+<script src="../layui/layui.js"></script>
+<script src="https://api.map.baidu.com/api?v=1.0&type=webgl&ak=vlArPed8Ipa6Im77cbpq9Flok1BSJd18"></script>
+<script>
+    const allMap = new BMapGL.Map("all-map");
+
+    function addMarkers(items) {
+        allMap.clearOverlays();
+        const points = [];
+        items.forEach(function (item) {
+            item.price = asPrice(100.00, 500.00);
+            const marker = addMarker(item);
+            points.push(marker.getPosition());
+        });
+        allMap.setViewport(points);
+    }
+
+    function addMarker(data) {
+        const marker = new BMapGL.Marker(new BMapGL.Point(data.point.lng, data.point.lat), {title: data.address});
+        marker.setIcon(new BMapGL.Icon("hotel.png", new BMapGL.Size(32, 32)));
+        marker.setLabel(new BMapGL.Label(`${data.name}（参考价: ￥${data.price}）`, {offset: new BMapGL.Size(20, -10)}));
+        marker.addEventListener("mouseover", function () {
+            marker.setTop(true);
+        });
+        marker.addEventListener("mouseout", function () {
+            marker.setTop(false);
+        });
+        marker.addEventListener("click", function () {
+            allMap.openInfoWindow(new BMapGL.InfoWindow(`地址：${data.address}<br>参考价: ￥${data.price}`, {title: data.name})
+                , new BMapGL.Point(data.point.lng, data.point.lat));
+        });
+        allMap.addOverlay(marker);
+        return marker;
+    }
+
+    function asPrice(min, max) {
+        return (Math.random() * (max - min) + min).toFixed(2);
+    }
+
+    function asUuid() {
+        if (crypto.randomUUID) return crypto.randomUUID();
+        return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+            (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+        );
+    }
+
+    layui.config({
+        layimPath: '../layim/',
+        layimResPath: '../layim/res/'
+    }).extend({
+        layim: layui.cache.layimPath + 'layim'
+    }).use(['layim'], function () {
+
+        let abortController, conversationId = asUuid()
+            , roleSystem = `我是一家酒店，名字是{name}，位于{address}。
+            我还是一位经验丰富的酒店管理系统AI助手，
+            拥有10年以上的高端酒店管理经验，
+            精通前厅、客房、餐饮、财务、人力资源、市场营销等全方位酒店运营管理。`;
+
+        layui.layim.on('sendMessage', function (data) {
+            console.log('sendMessage => ', data);
+            const user = data.user; // 当前用户的数据（即我）,包含了消息内容。
+            const receiver = data.receiver; // 当前聊天对象的数据（即 AI）
+
+            if (receiver.type === 'ai') {
+                const messages = [];
+                abortController = new AbortController();
+                SSE.fetchEventSource(`../ai/chat/completions`, {
+                    method: 'POST'
+                    , headers: {'Content-Type': 'application/json'}
+                    , body: JSON.stringify({uuid: conversationId, system: roleSystem, user: user.content})
+                    , signal: abortController.signal
+                    , onopen: function (response) {
+                        if (!response.ok) throw new Error(`URL ${response.status} ${response.statusText}`);
+                    }
+                    , onmessage: function (msg) {
+                        console.log('msg => ', msg);
+                        messages.push(msg.data);
+                        layui.layim.getMessage({...receiver, content: messages.join(''), finished: false});
+                    }
+                    , onerror: function (error) {
+                        layui.layim.getMessage({...receiver, content: `**错误信息：** ${error}`, finished: true});
+                        throw error;
+                    }
+                    , onclose: function () {
+                        layui.layim.getMessage({...receiver, content: messages.join(''), finished: true});
+                    }
+                });
+            }
+        });
+
+        layui.layim.callback('contentParser', function (data) {
+            const md = markdownit({typographer: true, linkify: true, breaks: true});
+            return md.render(data);
+        });
+
+        layui.layim.on('chatInit', function (obj) {
+            const data = obj.data, elem = obj.elem;
+            if (data.type === 'ai') {
+                const lastItem = elem.find('.layim-chat-main>ul>li').last();
+                const existMessages = layui.layim.chat.messages && layui.layim.chat.messages[data.id];
+                if (!existMessages && !lastItem.hasClass('layim-chat-system')) {
+                    layui.layim.getMessage({
+                        system: true
+                        , id: data.id
+                        , type: 'ai'
+                        , content: '以下为新的对话'
+                        , saveLocalChatlog: false
+                    });
+                }
+                layui.$.ajax({url: `../ai/chat/${conversationId}`, type: 'DELETE'});
+                conversationId = asUuid();
+            }
+        });
+
+        layui.$.get('hotel.json').done(function (data) {
+            allMap.centerAndZoom(new BMapGL.Point(data.data.point.lng, data.data.point.lat), 11);
+            allMap.enableScrollWheelZoom();
+            addMarker(data.data);
+
+            layui.layim.config({
+                contactsPanel: false
+                , init: {
+                    user: {
+                        username: data.data.name
+                        , id: `user-${data.data.name}`
+                        , avatar: 'hotel.png'
+                    }
+                }
+            });
+
+            roleSystem = roleSystem.replace("{name}", data.data.name);
+            roleSystem = roleSystem.replace("{address}", data.data.address);
+            if (layui.$.trim(layui.data('role-system').system) === '') {
+                layui.data('role-system', {key: 'system', value: roleSystem});
+            }
+
+            layui.layim.extendChatTools([
+                {
+                    name: 'mike', title: '语音输入', icon: 'layui-icon-mike'
+                    , onClick: function () {
+                        const speechRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                        speechRecognition.continuous = false;
+                        speechRecognition.interimResults = false;
+                        speechRecognition.lang = 'zh-CN';
+                        speechRecognition.maxAlternatives = 1;
+                        speechRecognition.onresult = function (e) {
+                            const result = e.results[e.results.length - 1][0].transcript.trim();
+                            console.log('语音识别 => ', result);
+                            if (layui.$.trim(result) === '') return layui.layer.msg('未识别到文字');
+                            layui.layim.sendMessage(result);
+                        }
+                        speechRecognition.onstart = function () {
+                            console.log('~~~开始语音识别~~~');
+                            layui.layer.load(2);
+                        };
+                        speechRecognition.onend = function () {
+                            console.log('~~~结束语音识别~~~');
+                            layui.layer.closeAll('loading');
+                        };
+                        speechRecognition.onerror = function (e) {
+                            console.error('语音识别错误 => ', e.error);
+                            layui.layer.closeAll('loading');
+                            layui.layer.msg(e.error);
+                        };
+                        speechRecognition.start();
+                    }
+                }, {
+                    name: 'system', title: '人设模板', icon: 'layui-icon-bot'
+                    , onClick: function () {
+                        if (layui.data('role-system').system) {
+                            roleSystem = layui.data('role-system').system;
+                        }
+                        layui.layer.prompt({title: '人设模板', value: roleSystem, formType: 2, shade: 0}
+                            , function (value, index, elem) {
+                                if (layui.$.trim(value) === '') return elem.focus();
+                                roleSystem = value;
+                                layui.data('role-system', {key: 'system', value: roleSystem});
+                                layui.layer.close(index);
+                            });
+                    }
+                }]);
+
+            layui.util.fixbar({
+                default: false
+                , bars: [{type: 'AI', icon: 'layui-icon-bot', style: 'background-color: #FF5722;'}]
+                , on: {
+                    mouseenter: function () {
+                        layui.layer.tips(`${data.data.name}（AI助手）`, this, {tips: 4, fixed: true});
+                    }
+                    , mouseleave: function () {
+                        layui.layer.closeAll('tips');
+                    }
+                    , click: function () {
+                        layui.layim.chat({
+                            type: 'ai'
+                            , username: `${data.data.name}（AI助手）`
+                            , id: `ai-${data.data.name}`
+                            , avatar: 'robot.png'
+                            , new: true
+                            , enableLocalChatlog: false
+                            , layer: {
+                                cancel: function () {
+                                    if (abortController) abortController.abort();
+                                    layui.$.ajax({url: `../ai/chat/${conversationId}`, type: 'DELETE'});
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+
+            layui.$.get('hotels.json').done(function (data) {
+                addMarkers(data.data);
+                layui.table.reload('all-hotels-table', {data: data.data});
+                setInterval(function () {
+                    addMarkers(data.data);
+                    layui.table.reload('all-hotels-table', {data: data.data});
+                }, 1000 * 5);
+            });
+        });
+
+    });
+</script>
+</body>
+</html>
