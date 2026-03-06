@@ -14,11 +14,25 @@ human:
       - title: DeepSeek-R1
         value: deepseek-r1
 
+spring:
+  ai:
+    openai:
+      api-key:
+      chat:
+        base-url: https://qianfan.baidubce.com
+        completions-path: /v2/chat/completions
+        options:
+          model: deepseek-v3.2
+
 server:
   port: 8080
-  tomcat:
-    uri-encoding: UTF-8
   ssl:
     enabled: true
     key-store: classpath:keystore.jks
     key-store-password: 123456
+
+logging:
+  level:
+    web.digital.human: info
+  file:
+    name: logs/web-digital-human.log
