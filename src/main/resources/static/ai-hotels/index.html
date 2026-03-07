@@ -97,8 +97,8 @@
     }).use(['layim'], function () {
 
         let abortController, conversationId = asUuid()
-            , roleSystem = '我是一家酒店，名字是{name}，位于{address}。' +
-            '我还是一位经验丰富的酒店管理系统AI助手，' +
+            , roleSystem = '你是一家酒店，名字是{name}，位于{address}。' +
+            '你还是一位经验丰富的酒店管理系统AI助手，' +
             '拥有10年以上的高端酒店管理经验，精通前厅、客房、餐饮、财务、人力资源、市场营销等全方位酒店运营管理。';
 
         layui.layim.on('sendMessage', function (data) {
@@ -119,7 +119,8 @@
                     }
                     , onmessage: function (msg) {
                         console.log('msg => ', msg);
-                        messages.push(msg.data);
+                        const data = JSON.parse(msg.data);
+                        messages.push(data.result.output.text);
                         layui.layim.getMessage({...receiver, content: messages.join(''), finished: false});
                     }
                     , onerror: function (error) {
@@ -133,8 +134,8 @@
             }
         });
 
+        const md = markdownit({typographer: true, linkify: true, breaks: true});
         layui.layim.callback('contentParser', function (data) {
-            const md = markdownit({typographer: true, linkify: true, breaks: true});
             return md.render(data);
         });
 

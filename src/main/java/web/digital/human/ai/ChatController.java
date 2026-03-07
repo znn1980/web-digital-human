@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -23,12 +24,12 @@ public class ChatController {
     }
 
     @PostMapping(value = "/ai/chat/completions", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> chatCompletions(@RequestBody ChatRequest chatRequest) {
+    public Flux<ChatResponse> chatCompletions(@RequestBody ChatRequest chatRequest) {
         LOGGER.info("CHAT-COMPLETIONS => {}", chatRequest);
         return this.chatClient.prompt()
                 .system(chatRequest.system()).user(chatRequest.user())
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatRequest.uuid()))
-                .stream().content();
+                .stream().chatResponse();
     }
 
     @DeleteMapping("/ai/chat/{conversationId}")

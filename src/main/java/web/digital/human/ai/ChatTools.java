@@ -33,6 +33,7 @@ public class ChatTools {
 
     @Tool(description = "查询附近酒店房间的价格")
     public String queryHotelPrice(@ToolParam(description = "附近多少公里") String km) throws IOException {
+        LOGGER.info("查询附近%s公里酒店房间的价格 => {}", km);
         StringBuilder sb = new StringBuilder();
         sb.append("附近").append(km).append("公里的酒店：\n");
         ((ArrayList<?>) new ObjectMapper()
