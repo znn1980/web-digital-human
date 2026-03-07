@@ -28,12 +28,6 @@ public class HumanComponent {
     private final static Logger LOGGER = LoggerFactory.getLogger(HumanComponent.class);
 
     @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper()
-                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-    }
-
-    @Bean
     public SslContext sslContext() throws SSLException {
         return SslContextBuilder.forClient()
                 .trustManager(InsecureTrustManagerFactory.INSTANCE)
@@ -62,13 +56,15 @@ public class HumanComponent {
     }
 
     @Bean
-    public WebClient webClient(HttpClient httpClient, ObjectMapper objectMapper) {
+    public WebClient webClient(HttpClient httpClient) {
         return WebClient.builder()
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .exchangeStrategies(ExchangeStrategies.builder()
                         .codecs(configurer -> {
-                            configurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(objectMapper, MediaType.APPLICATION_JSON));
-                            configurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON));
+                            configurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(new ObjectMapper()
+                                    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES), MediaType.APPLICATION_JSON));
+                            configurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(new ObjectMapper()
+                                    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES), MediaType.APPLICATION_JSON));
                         }).build())
                 .build();
     }
