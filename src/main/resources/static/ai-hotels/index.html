@@ -120,7 +120,7 @@
                     , onmessage: function (msg) {
                         console.log('msg => ', msg);
                         const data = JSON.parse(msg.data);
-                        messages.push(data.result.output.text);
+                        data?.result?.output?.text && messages.push(data.result.output.text);
                         layui.layim.getMessage({...receiver, content: messages.join(''), finished: false});
                     }
                     , onerror: function (error) {
