@@ -27,7 +27,7 @@ public class ChatController {
     public Flux<ChatResponse> chatCompletions(@RequestBody ChatRequest chatRequest) {
         LOGGER.info("CHAT-COMPLETIONS => {}", chatRequest);
         return this.chatClient.prompt()
-                .system(chatRequest.system()).user(chatRequest.user())
+                .user(chatRequest.user())
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatRequest.uuid()))
                 .stream().chatResponse();
     }
