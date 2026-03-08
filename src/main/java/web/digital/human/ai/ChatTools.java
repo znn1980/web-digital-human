@@ -32,7 +32,7 @@ public class ChatTools {
         return LocalDateTime.now().toString();
     }
 
-    @Tool(description = "修改酒店房间的价格")
+    @Tool(description = "修改酒店的房间价格")
     public String setHotelRoomPrice(@ToolParam(description = "房间类型，类型如：标间、大床房、套房等") String roomName
             , @ToolParam(description = "房间价格") String roomPrice) {
         StringBuilder sb = new StringBuilder();
@@ -41,7 +41,7 @@ public class ChatTools {
         return sb.toString();
     }
 
-    @Tool(description = "查询酒店房间的价格")
+    @Tool(description = "查询酒店的房间价格")
     public String queryHotelRoomPrice(@ToolParam(description = "房间类型，类型如：标间、大床房、套房等。注意：如果没有指定具体类型查询所有房间的价格。")
                                       String roomName) throws IOException {
         StringBuilder sb = new StringBuilder();
@@ -58,7 +58,19 @@ public class ChatTools {
         return sb.toString();
     }
 
-    @Tool(description = "查询旅客预订信息")
+    @Tool(description = "旅客预订酒店房间")
+    public String setGuestRoom(@ToolParam(description = "旅客姓名") String guestName
+            , @ToolParam(description = "入住日期") String checkInDate
+            , @ToolParam(description = "房间类型，类型如：标间、大床房、套房等") String roomName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(guestName).append("，您预订的").append(roomName)
+                .append("，入住日期是：").append(checkInDate)
+                .append("，价格是：").append(asPrice(100, 500));
+        LOGGER.info("旅客预订酒店房间 => {} => {} \n{}", guestName, checkInDate, sb);
+        return sb.toString();
+    }
+
+    @Tool(description = "查询旅客的预订信息")
     public String queryGuestRoom(@ToolParam(description = "旅客姓名") String guestName
             , @ToolParam(description = "入住日期") String checkInDate) {
         StringBuilder sb = new StringBuilder();
@@ -69,7 +81,7 @@ public class ChatTools {
         return sb.toString();
     }
 
-    @Tool(description = "查询附近酒店房间的价格")
+    @Tool(description = "查询附近的酒店信息")
     public String queryNearHotelPrice(@ToolParam(description = "附近多少公里") String km) throws IOException {
         StringBuilder sb = new StringBuilder();
         sb.append("# 附近").append(km).append("公里的酒店如下：\n");
