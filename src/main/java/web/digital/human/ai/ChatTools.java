@@ -1,6 +1,7 @@
 package web.digital.human.ai;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author znn
@@ -25,6 +26,12 @@ public class ChatTools {
     private Resource hotel;
     @Value("classpath:/static/ai-hotels/hotels.json")
     private Resource hotels;
+    private final ObjectMapper mapper;
+
+    public ChatTools(ObjectMapper mapper) {
+        this.mapper = mapper
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    }
 
     @Tool(description = "获取当前日期和时间")
     public String getCurrentDateTime() {
@@ -35,77 +42,67 @@ public class ChatTools {
     @Tool(description = "修改酒店的房间价格")
     public String setHotelRoomPrice(
             @ToolParam(description = "房间类型，类型如：标间、大床房、套房等") String roomName
-            , @ToolParam(description = "房间价格") String roomPrice
-    ) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("酒店**").append(roomName).append("**的价格是：**").append(roomPrice).append("**");
-        LOGGER.info("修改酒店的房间价格 => {} \n\n{}", roomPrice, sb);
-        return sb.toString();
+            , @ToolParam(description = "房间价格") String roomPrice) {
+        LOGGER.info("修改酒店的房间价格 => {} => {}", roomName, roomPrice);
+        return String.format("""
+                酒店%s的价格修改完成
+                价格是：%s
+                """, roomName, roomPrice);
     }
 
-    @Tool(description = "查询酒店的房间价格")
-    public String queryHotelRoomPrice(
-            @ToolParam(description = "房间类型，类型如：标间、大床房、套房等。注意：如果没有指定具体类型查询所有房间的价格。", required = false)
-            String roomName
-    ) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append("# 酒店的房间价格如下：\n\n");
-        sb.append("|房间类型|房间价格|\n");
-        sb.append("|---|---|\n");
-        ((List<?>) new ObjectMapper()
-                .readValue(hotel.getURL(), new TypeReference<Map<String, Object>>() {
-                }).get("rooms")).forEach(data ->
-                sb.append("|").append(((Map<?, ?>) data).get("name"))
-                        .append("|").append(asPrice(100, 500)).append("|\n"));
-        LOGGER.info("查询酒店的房间价格 => {} \n\n{}", roomName, sb);
-        return sb.toString();
+    @Tool(description = """
+            查询酒店的房间价格
+            1. 输入参数是房间类型，类型如：标间、大床房、套房等。注意：如果没有指定具体类型就返回所有的房间价格
+            2. 返回酒店房间信息包含：房间名称、房间价格
+            """)
+    public List<ChatHotel.Room> queryHotelRoomPrice(@ToolParam(description = """
+            房间类型，类型如：标间、大床房、套房等
+            """, required = false) String roomName) throws IOException {
+        LOGGER.info("查询酒店的房间价格 => {}", roomName);
+        return mapper.readValue(hotel.getURL(), ChatHotel.class).rooms()
+                .stream().map(room -> room.price(asPrice(100, 500)))
+                .collect(Collectors.toList());
     }
 
     @Tool(description = "旅客预订酒店房间")
     public String setGuestRoom(@ToolParam(description = "旅客姓名") String guestName
             , @ToolParam(description = "入住日期") String checkInDate
             , @ToolParam(description = "房间类型，类型如：标间、大床房、套房等") String roomName) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("**").append(guestName).append("**，您预订的**").append(roomName)
-                .append("**，入住日期是：**").append(checkInDate)
-                .append("**，价格是：**").append(asPrice(100, 500)).append("**");
-        LOGGER.info("旅客预订酒店房间 => {} => {} \n\n{}", guestName, checkInDate, sb);
-        return sb.toString();
+        LOGGER.info("旅客预订酒店房间 => {} => {} => {}", guestName, checkInDate, roomName);
+        return String.format("""
+                %s，您预订的%s已成功
+                入住日期是：%s
+                价格是：%s
+                """, guestName, roomName, checkInDate, asPrice(100, 500));
     }
 
     @Tool(description = "查询旅客的预订信息")
     public String queryGuestRoom(@ToolParam(description = "旅客姓名") String guestName
             , @ToolParam(description = "入住日期") String checkInDate) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("**").append(guestName).append("**，您预订的").append("房间")
-                .append("，入住日期是：**").append(checkInDate)
-                .append("**，价格是：**").append(asPrice(100, 500)).append("**");
-        LOGGER.info("查询旅客预订信息 => {} => {} \n\n{}", guestName, checkInDate, sb);
-        return sb.toString();
+        LOGGER.info("查询旅客的预订信息 => {} => {}", guestName, checkInDate);
+        return String.format("""
+                %s，您预订的房间已成功
+                入住日期是：%s
+                价格是：%s
+                """, guestName, checkInDate, asPrice(100, 500));
     }
 
-    @Tool(description = "查询附近酒店的信息")
-    public String queryNearHotelPrice(@ToolParam(description = "附近多少公里", required = false) String km) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append("# 附近").append(km).append("公里的酒店如下：\n\n");
-        new ObjectMapper()
-                .readValue(hotels.getURL(), new TypeReference<List<Map<String, Object>>>() {
-                })
-                .forEach(data -> {
-                    sb.append("## ").append(data.get("name")).append("\n\n");
-                    sb.append("- **酒店类型**：").append(data.get("type")).append("\n\n");
-                    sb.append("- **酒店地址**：").append(data.get("address")).append("\n\n");
-                    sb.append("### ").append(data.get("name")).append("的房间价格如下：").append("\n\n");
-                    StringBuilder rooms = new StringBuilder();
-                    rooms.append("|房间类型|房间价格|\n");
-                    rooms.append("|---|---|\n");
-                    ((List<?>) data.get("rooms")).forEach(room ->
-                            rooms.append("|").append(((Map<?, ?>) room).get("name"))
-                                    .append("|").append(asPrice(100, 500)).append("|\n"));
-                    sb.append(rooms).append("\n\n");
-                });
-        LOGGER.info("查询附近%s公里酒店房间的价格 => {} \n\n{}", km, sb);
-        return sb.toString();
+    @Tool(description = """
+            查询附近的酒店信息
+            1. 输入参数是附近多少公里，注意：如果没有指定具体的公里数就返回所有的酒店
+            2. 返回酒店信息包含：酒店名称、酒店地址、酒店类型、酒店参考价、酒店位置（经纬度）、房间列表
+            3. 房间列表包含：房间名称、房间价格
+            """)
+    public List<ChatHotel> queryNearHotelPrice(
+            @ToolParam(description = "附近多少公里", required = false) String km) throws IOException {
+        LOGGER.info("查询附近%s公里的酒店信息 => {}", km);
+        return mapper.readValue(hotels.getURL(), new TypeReference<List<ChatHotel>>() {
+                }).stream()
+                .map(hotel -> hotel.price(asPrice(100, 500))
+                        .rooms(hotel.rooms().stream()
+                                .map(room -> room.price(asPrice(100, 500)))
+                                .collect(Collectors.toList())))
+                .collect(Collectors.toList());
     }
 
     public static String asPrice(double min, double max) {

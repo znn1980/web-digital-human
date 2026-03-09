@@ -43,7 +43,9 @@ public class ChatConfig {
 
 
     @Bean
-    public ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory, ChatTools chatTools, SystemPromptTemplate systemPromptTemplate) {
+    public ChatClient chatClient(ChatClient.Builder builder
+            , ChatMemory chatMemory, ChatTools chatTools
+            , SystemPromptTemplate systemPromptTemplate) {
         return builder
                 .defaultTools(chatTools)
                 .defaultSystem(systemPromptTemplate.render())
@@ -55,11 +57,10 @@ public class ChatConfig {
     }
 
     @Bean
-    public SystemPromptTemplate systemPromptTemplate() throws IOException {
+    public SystemPromptTemplate systemPromptTemplate(ObjectMapper mapper) throws IOException {
         return SystemPromptTemplate.builder()
                 .resource(defaultSystem)
-                .variables(new ObjectMapper()
-                        .readValue(hotel.getURL(), new TypeReference<>() {
-                        })).build();
+                .variables(mapper.readValue(hotel.getURL(), new TypeReference<>() {
+                })).build();
     }
 }
