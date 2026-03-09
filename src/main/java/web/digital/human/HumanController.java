@@ -14,9 +14,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -196,12 +196,12 @@ public class HumanController {
                 }));
     }
 
-    static String urlDecoder(String s) throws IOException {
-        return URLDecoder.decode(s, "UTF-8");
+    static String urlDecoder(String s) {
+        return URLDecoder.decode(s, StandardCharsets.UTF_8);
     }
 
-    static String urlEncoder(String s) throws IOException {
-        return URLEncoder.encode(s, "UTF-8")
+    static String urlEncoder(String s) {
+        return URLEncoder.encode(s, StandardCharsets.UTF_8)
                 .replace("+", "%20")
                 .replace("*", "%2A")
                 .replace("%7E", "~");

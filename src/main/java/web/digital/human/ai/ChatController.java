@@ -33,7 +33,7 @@ public class ChatController {
     }
 
     @DeleteMapping("/ai/chat/{conversationId}")
-    public void clearHistory(@PathVariable("conversationId") String conversationId) {
+    public void clearHistory(@PathVariable String conversationId) {
         LOGGER.info("CLEAR-HISTORY => {}", conversationId);
         this.chatMemory.clear(conversationId);
     }
