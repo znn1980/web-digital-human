@@ -21,7 +21,7 @@
         }
 
         #all-hotels {
-            width: 261px;
+            width: 262px;
             top: 10px;
             left: 10px;
             z-index: 999990;
@@ -33,7 +33,7 @@
 <body>
 <div id="all-map"></div>
 <div id="all-hotels">
-    <table id="all-hotels-table" class="layui-table" lay-options="{size:'sm',skin:'nob'}">
+    <table id="all-hotels-table" class="layui-table" lay-options="{size:'sm',skin:'row'}">
         <thead>
         <tr>
             <th lay-options="{field:'name',width:120,templet:'<div><span title=\'{{= d.address }}\'>{{= d.name }}</span></div>'}">酒店</th>
@@ -72,7 +72,15 @@
             marker.setTop(false);
         });
         marker.addEventListener("click", function () {
-            allMap.openInfoWindow(new BMapGL.InfoWindow(`类型：${data.type}<br>地址：${data.address}<br>参考价: ￥${data.price}`, {title: data.name})
+            const msg = [];
+            msg.push(`类型：${data.type}<br>地址：${data.address}`);
+            msg.push(`<table class="layui-table" lay-size="sm">`);
+            msg.push(`<thead><tr><th>房型</th><th>价格</th></tr></thead><tbody>`);
+            data.rooms.forEach(room => {
+                msg.push(`<tr><td>${room.name}</td><td>${room.price}</td></tr>`);
+            });
+            msg.push(`</tbody></table>`);
+            allMap.openInfoWindow(new BMapGL.InfoWindow(msg.join(''), {title: `${data.name}（参考价: ￥${data.price}）`})
                 , new BMapGL.Point(data.point.lng, data.point.lat));
         });
         allMap.addOverlay(marker);
@@ -134,7 +142,7 @@
 
         const md = markdownit({typographer: true, linkify: true, breaks: true});
         layui.layim.callback('contentParser', function (data) {
-            return md.render(data);
+            return md.render(data).replace('<table>', '<table class="layui-table" lay-size="sm">');
         });
 
         layui.layim.on('chatInit', function (obj) {
@@ -240,7 +248,7 @@
                 setInterval(function () {
                     addMarkers(data);
                     layui.table.reload('all-hotels-table', {data: data});
-                }, 1000 * 5);
+                }, 1000 * 30);
             });
         });
 
