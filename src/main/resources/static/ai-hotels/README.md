@@ -1,5 +1,5 @@
-<h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">AI智能酒店</h1>
-<h4 align="center">基于大模型制作的AI智能酒店。</h4>
+<h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">AI智能酒店（演示）</h1>
+<h4 align="center">基于 Spring AI 的人工智能酒店，主要演示系统提示词模板与 Tool Calling 的功能。</h4>
 <p align="center"><img src="AI智能酒店.png" alt=""></p>
 
 ## 功能

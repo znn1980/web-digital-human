@@ -23,6 +23,9 @@ import reactor.netty.resources.ConnectionProvider;
 import javax.net.ssl.SSLException;
 import java.time.Duration;
 
+/**
+ * @author znn
+ */
 @Component
 public class HumanComponent {
     private final static Logger LOGGER = LoggerFactory.getLogger(HumanComponent.class);

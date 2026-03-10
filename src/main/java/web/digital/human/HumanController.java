@@ -22,6 +22,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+/**
+ * @author znn
+ */
 @RestController
 public class HumanController {
     private final static Logger LOGGER = LoggerFactory.getLogger(HumanController.class);
@@ -207,7 +210,7 @@ public class HumanController {
                 .replace("%7E", "~");
     }
 
-    static class ChatRequest {
+    public static class ChatRequest {
         public String model;
         public boolean stream;
         public List<Message> messages;
@@ -217,7 +220,7 @@ public class HumanController {
             return String.format("{model=%s,stream=%s,messages=%s}", this.model, this.stream, this.messages);
         }
 
-        static class Message {
+        public static class Message {
             public String role;
             public String content;
 
@@ -253,7 +256,7 @@ public class HumanController {
 
     static class Token {
         @JsonProperty("Token")
-        public _Token token = new _Token();
+        public Token_ token = new Token_();
 
         public String getId() {
             return this.token.id;
@@ -271,7 +274,7 @@ public class HumanController {
             this.token.expireTime = expireTime;
         }
 
-        static class _Token {
+        static class Token_ {
             @JsonProperty("Id")
             public String id;
             @JsonProperty("ExpireTime")

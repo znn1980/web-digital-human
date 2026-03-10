@@ -5,6 +5,9 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
+/**
+ * @author znn
+ */
 @Configuration
 @ConfigurationProperties(prefix = "human")
 public class HumanProperties {
@@ -24,7 +27,7 @@ public class HumanProperties {
         return this.chat;
     }
 
-    static class Baidu {
+    public static class Baidu {
         private String apiKey;
         private String secretKey;
 
@@ -46,7 +49,7 @@ public class HumanProperties {
     }
 
 
-    static class Aliyun {
+    public static class Aliyun {
         private String accessKeyId;
         private String accessKeySecret;
 
@@ -67,7 +70,7 @@ public class HumanProperties {
         }
     }
 
-    static class Chat {
+    public static class Chat {
         private String baseUrl;
         private String apiKey;
         private List<Model> models;
@@ -97,7 +100,7 @@ public class HumanProperties {
         }
     }
 
-    static class Model {
+    public static class Model {
         private String title;
         private String value;
 

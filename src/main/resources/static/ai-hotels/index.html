@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="utf-8">
-    <title>墨历V酒店</title>
+    <title>AI智能酒店（演示）</title>
     <meta name="renderer" content="webkit">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
@@ -161,6 +161,7 @@
             allMap.enableScrollWheelZoom();
             addMarker(data);
 
+            document.title = `${data.name}`;
             layui.layim.config({
                 contactsPanel: false
                 , init: {

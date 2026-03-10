@@ -90,8 +90,8 @@ public class ChatTools {
     @Tool(description = """
             查询附近的酒店信息
             1. 输入参数是附近多少公里，注意：如果没有指定具体的公里数就返回所有的酒店
-            2. 返回酒店信息包含：酒店名称、酒店地址、酒店类型、酒店参考价、酒店位置（经纬度）、房间列表
-            3. 房间列表包含：房间名称、房间价格
+            2. 返回酒店信息包含：酒店名称（name）、酒店地址（address）、酒店类型（type）、酒店参考价（price）、酒店位置（point）、房间列表（rooms）
+            3. 房间列表包含：房间名称（name）、房间价格（price）
             """)
     public List<ChatHotel> queryNearHotelPrice(
             @ToolParam(description = "附近多少公里", required = false) String km) throws IOException {
