@@ -38,7 +38,7 @@
         <tr>
             <th lay-options="{field:'name',width:120,templet:'<div><span title=\'{{= d.address }}\'>{{= d.name }}</span></div>'}">酒店</th>
             <th lay-options="{field:'type',width:60}">类型</th>
-            <th lay-options="{field:'price',width:80,templet:'<div>￥{{= d.price }}</div>'}">参考价</th>
+            <th lay-options="{field:'price',width:80}">参考价</th>
         </tr>
         </thead>
     </table>
@@ -50,13 +50,17 @@
 <script>
     const allMap = new BMapGL.Map("all-map");
 
-    function addMarkers(items) {
-        allMap.clearOverlays();
+    function addHotels(hotels) {
         const points = [];
-        items.forEach(function (item) {
-            item.price = asPrice(100.00, 500.00);
-            const marker = addMarker(item);
-            points.push(marker.getPosition());
+        allMap.clearOverlays();
+        hotels.forEach(function (data) {
+            let sum = 0;
+            data.rooms.forEach(function (room) {
+                sum += room.price = asPrice(100.00, 500.00);
+                room.price = `￥${room.price.toFixed(2)}`;
+            });
+            data.price = `￥${(sum / data.rooms.length).toFixed(2)}`;
+            points.push(addMarker(data).getPosition());
         });
         allMap.setViewport(points);
     }
@@ -64,7 +68,7 @@
     function addMarker(data) {
         const marker = new BMapGL.Marker(new BMapGL.Point(data.point.lng, data.point.lat), {title: data.address});
         marker.setIcon(new BMapGL.Icon("hotel.png", new BMapGL.Size(32, 32)));
-        marker.setLabel(new BMapGL.Label(`${data.name}（参考价: ￥${data.price}）`, {offset: new BMapGL.Size(20, -10)}));
+        marker.setLabel(new BMapGL.Label(`${data.name}（参考价: ${data.price}）`, {offset: new BMapGL.Size(20, -10)}));
         marker.addEventListener("mouseover", function () {
             marker.setTop(true);
         });
@@ -76,11 +80,11 @@
             msg.push(`类型：${data.type}<br>地址：${data.address}`);
             msg.push(`<table class="layui-table" lay-size="sm">`);
             msg.push(`<thead><tr><th>房型</th><th>价格</th></tr></thead><tbody>`);
-            data.rooms.forEach(room => {
+            data.rooms.forEach(function (room) {
                 msg.push(`<tr><td>${room.name}</td><td>${room.price}</td></tr>`);
             });
             msg.push(`</tbody></table>`);
-            allMap.openInfoWindow(new BMapGL.InfoWindow(msg.join(''), {title: `${data.name}（参考价: ￥${data.price}）`})
+            allMap.openInfoWindow(new BMapGL.InfoWindow(msg.join(''), {title: `${data.name}（参考价: ${data.price}）`})
                 , new BMapGL.Point(data.point.lng, data.point.lat));
         });
         allMap.addOverlay(marker);
@@ -88,7 +92,7 @@
     }
 
     function asPrice(min, max) {
-        return (Math.random() * (max - min) + min).toFixed(2);
+        return Math.random() * (max - min) + min;
     }
 
     function asUuid() {
@@ -243,10 +247,10 @@
             });
 
             layui.$.get('hotels.json').done(function (data) {
-                addMarkers(data);
+                addHotels(data);
                 layui.table.reload('all-hotels-table', {data: data});
                 setInterval(function () {
-                    addMarkers(data);
+                    addHotels(data);
                     layui.table.reload('all-hotels-table', {data: data});
                 }, 1000 * 30);
             });

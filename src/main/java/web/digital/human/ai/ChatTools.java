@@ -13,8 +13,9 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author znn
@@ -60,8 +61,8 @@ public class ChatTools {
             """, required = false) String roomName) throws IOException {
         LOGGER.info("查询酒店的房间价格 => {}", roomName);
         return mapper.readValue(hotel.getURL(), ChatHotel.class).rooms()
-                .stream().map(room -> room.price(asPrice(100, 500)))
-                .collect(Collectors.toList());
+                .stream().map(room -> room.price(String.format("￥ %.2f", asPrice(100, 500))))
+                .toList();
     }
 
     @Tool(description = "旅客预订酒店房间")
@@ -96,16 +97,23 @@ public class ChatTools {
     public List<ChatHotel> queryNearHotelPrice(
             @ToolParam(description = "附近多少公里", required = false) String km) throws IOException {
         LOGGER.info("查询附近%s公里的酒店信息 => {}", km);
-        return mapper.readValue(hotels.getURL(), new TypeReference<List<ChatHotel>>() {
-                }).stream()
-                .map(hotel -> hotel.price(asPrice(100, 500))
-                        .rooms(hotel.rooms().stream()
-                                .map(room -> room.price(asPrice(100, 500)))
-                                .collect(Collectors.toList())))
-                .collect(Collectors.toList());
+        List<ChatHotel> chatHotels = new ArrayList<>();
+        mapper.readValue(hotels.getURL(), new TypeReference<List<ChatHotel>>() {
+        }).forEach(hotel -> {
+            AtomicReference<Double> sum = new AtomicReference<>(0.0);
+            List<ChatHotel.Room> rooms = new ArrayList<>();
+            hotel.rooms().forEach(room -> {
+                double price = asPrice(100, 500);
+                sum.updateAndGet(v -> v + price);
+                rooms.add(room.price(String.format("￥ %.2f", price)));
+            });
+            chatHotels.add(hotel.rooms(rooms)
+                    .price(String.format("￥ %.2f", sum.get() / hotel.rooms().size())));
+        });
+        return chatHotels;
     }
 
-    public static String asPrice(double min, double max) {
-        return String.format("￥ %.2f", (Math.random() * (max - min) + min));
+    public static double asPrice(double min, double max) {
+        return (Math.random() * (max - min) + min);
     }
 }
