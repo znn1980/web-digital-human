@@ -22,4 +22,7 @@ public record ChatHotel(String name, String address, String type, String price, 
             return new Room(name, price);
         }
     }
+
+    public record CheckIN(String guestName, String dateTime, String roomName, String roomPrice) {
+    }
 }

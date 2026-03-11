@@ -14,7 +14,7 @@ import reactor.core.publisher.Flux;
  */
 @RestController
 public class ChatController {
-    private final static Logger LOGGER = LoggerFactory.getLogger(ChatController.class);
+    private final static Logger log = LoggerFactory.getLogger(ChatController.class);
     private final ChatClient chatClient;
     private final ChatMemory chatMemory;
 
@@ -25,7 +25,7 @@ public class ChatController {
 
     @PostMapping(value = "/ai/chat/completions", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ChatResponse> chatCompletions(@RequestBody ChatRequest chatRequest) {
-        LOGGER.info("CHAT-COMPLETIONS => {}", chatRequest);
+        log.info("CHAT-COMPLETIONS => {}", chatRequest);
         return this.chatClient.prompt()
                 .user(chatRequest.user())
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatRequest.uuid()))
@@ -34,7 +34,7 @@ public class ChatController {
 
     @DeleteMapping("/ai/chat/{conversationId}")
     public void clearHistory(@PathVariable String conversationId) {
-        LOGGER.info("CLEAR-HISTORY => {}", conversationId);
+        log.info("CLEAR-HISTORY => {}", conversationId);
         this.chatMemory.clear(conversationId);
     }
 }

@@ -27,7 +27,7 @@ import java.util.*;
  */
 @RestController
 public class HumanController {
-    private final static Logger LOGGER = LoggerFactory.getLogger(HumanController.class);
+    private final static Logger log = LoggerFactory.getLogger(HumanController.class);
     private final HumanProperties properties;
     private final WebClient webClient;
     private final Credentials credentials = new Credentials();
@@ -55,16 +55,16 @@ public class HumanController {
             request.model = this.properties.getChat().getModels().get(0).getValue();
         }
         request.stream = true;
-        LOGGER.info("问：{}", request);
+        log.info("问：{}", request);
         return this.webClient.post()
                 .uri(this.properties.getChat().getBaseUrl() + "/chat/completions")
                 .header("Authorization", String.format("Bearer %s", this.properties.getChat().getApiKey()))
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request).retrieve().bodyToFlux(String.class)
-                .doOnNext(s -> LOGGER.info("答：{}", s))
+                .doOnNext(s -> log.info("答：{}", s))
                 .onErrorResume(e -> {
-                    LOGGER.error("答：{}", e.getMessage(), e);
+                    log.error("答：{}", e.getMessage(), e);
                     return Flux.empty();
                 });
     }
@@ -76,11 +76,11 @@ public class HumanController {
     @GetMapping(value = "/aliyun/credentials", produces = MediaType.TEXT_PLAIN_VALUE)
     public Mono<String> token() {
         return this.refreshToken().map(token -> {
-                    LOGGER.info("【阿里云】TOKEN：{} - {}", token.getId(), new Date(token.getExpireTime()));
+                    log.info("【阿里云】TOKEN：{} - {}", token.getId(), new Date(token.getExpireTime()));
                     return token.getId();
                 })
                 .onErrorResume(e -> {
-                    LOGGER.error("【阿里云】TOKEN：{}", e.getMessage(), e);
+                    log.error("【阿里云】TOKEN：{}", e.getMessage(), e);
                     return Mono.empty();
                 });
     }
@@ -100,9 +100,9 @@ public class HumanController {
                                 .header("Host", "nls-gateway-cn-shanghai.aliyuncs.com")
                                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                                 .bodyValue(bytes).retrieve().bodyToMono(String.class)))
-                .doOnNext(s -> LOGGER.info("【阿里云】语音识别：{}", s))
+                .doOnNext(s -> log.info("【阿里云】语音识别：{}", s))
                 .onErrorResume(e -> {
-                    LOGGER.error("【阿里云】语音识别：{}", e.getMessage(), e);
+                    log.error("【阿里云】语音识别：{}", e.getMessage(), e);
                     return Mono.empty();
                 });
     }
@@ -114,11 +114,11 @@ public class HumanController {
     @GetMapping(value = "/baidu/credentials", produces = MediaType.TEXT_PLAIN_VALUE)
     public Mono<String> credentials() {
         return this.refreshCredentials().map(credentials -> {
-                    LOGGER.info("【百度】TOKEN：{} - {}", credentials.getAccessToken(), new Date(credentials.getExpiresIn()));
+                    log.info("【百度】TOKEN：{} - {}", credentials.getAccessToken(), new Date(credentials.getExpiresIn()));
                     return credentials.getAccessToken();
                 })
                 .onErrorResume(e -> {
-                    LOGGER.error("【百度】TOKEN：{}", e.getMessage(), e);
+                    log.error("【百度】TOKEN：{}", e.getMessage(), e);
                     return Mono.empty();
                 });
     }
@@ -139,9 +139,9 @@ public class HumanController {
                                 .accept(MediaType.APPLICATION_JSON)
                                 .contentType(MediaType.parseMediaType("audio/pcm;rate=16000"))
                                 .bodyValue(bytes).retrieve().bodyToMono(String.class)))
-                .doOnNext(s -> LOGGER.info("【百度】语音识别：{}", s))
+                .doOnNext(s -> log.info("【百度】语音识别：{}", s))
                 .onErrorResume(e -> {
-                    LOGGER.error("【百度】语音识别：{}", e.getMessage(), e);
+                    log.error("【百度】语音识别：{}", e.getMessage(), e);
                     return Mono.empty();
                 });
     }

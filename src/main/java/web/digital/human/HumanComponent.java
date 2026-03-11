@@ -28,7 +28,7 @@ import java.time.Duration;
  */
 @Component
 public class HumanComponent {
-    private final static Logger LOGGER = LoggerFactory.getLogger(HumanComponent.class);
+    private final static Logger log = LoggerFactory.getLogger(HumanComponent.class);
 
     @Bean
     public SslContext sslContext() throws SSLException {
@@ -45,16 +45,10 @@ public class HumanComponent {
                 .doOnConnected(conn -> conn
                         .addHandlerFirst(new ReadTimeoutHandler(10))
                         .addHandlerFirst(new WriteTimeoutHandler(10)))
-                .doOnRequest((request, conn) -> {
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("Request: {} {} {}", request.version(), request.method(), request.uri());
-                    }
-                })
-                .doOnResponse((response, conn) -> {
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("Response status: {} headers: {}", response.status(), response.responseHeaders());
-                    }
-                })
+                .doOnRequest((request, conn) ->
+                        log.info("Request: {} {} {}", request.version(), request.method(), request.uri()))
+                .doOnResponse((response, conn) ->
+                        log.info("Response status: {} headers: {}", response.status(), response.responseHeaders()))
                 .secure(ssl -> ssl.sslContext(sslContext));
     }
 
