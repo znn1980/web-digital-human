@@ -50,6 +50,11 @@ layui.define(function (exports) {
         },
         //加载数字人形象
         load: function (human, callback) {
+            $human.request.messages = [{
+                role: 'system', content: `
+                你的名字叫${human.title}，是一位智能助手。
+                `
+            }];
             $human.me = human;
             $human.stop();
             const loading = layui.layer.msg('数字人，加载中...', {

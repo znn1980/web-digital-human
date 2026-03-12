@@ -18,8 +18,8 @@ spring:
   ai:
     openai:
       api-key:
+      base-url: https://qianfan.baidubce.com
       chat:
-        base-url: https://qianfan.baidubce.com
         completions-path: /v2/chat/completions
         options:
           model: deepseek-v3.2
