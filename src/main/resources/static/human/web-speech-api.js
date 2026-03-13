@@ -25,7 +25,7 @@ class WebSpeech {
         // 初始化语音文本缓冲区和语音队列
         this.buffer = '';
         this.queue = [];
-        this.reg = /[。！？：；.!?:;]/;
+        this.reg = /[。！？：；.!?:;\n]/;
         // 创建加载动画控制器
         this.loader = new WebSpeechLoader();
     }
