@@ -6,9 +6,6 @@ class WebSpeech {
      * @returns {void}
      */
     constructor(lang) {
-        if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-            throw new Error('浏览器不支持语音识别（Web Speech API）！');
-        }
         // 创建浏览器语音识别实例，兼容 Chrome 的 webkit 前缀版本
         this.speechRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         // 配置为不返回中间结果，仅在识别完成后返回最终结果
@@ -98,10 +95,6 @@ class WebSpeech {
             // 执行回调函数返回识别结果
             typeof callback === 'function' && callback(result);
         }
-        // 语音识别启动时的日志记录
-        this.speechRecognition.onstart = () => {
-            console.log('开始语音识别...');
-        }
         // 语音识别结束时关闭加载动画
         this.speechRecognition.onend = () => {
             console.log('结束语音识别...');
@@ -127,10 +120,10 @@ class WebSpeech {
      * @returns {void}
      */
     resume() {
-        // 正在说话时不重启识别，避免干扰语音合成
-        if (this.speaking) return;
         // 停止当前识别服务
         this.speechRecognition.stop();
+        // 正在说话时不重启识别，避免干扰语音合成
+        if (this.speaking) return;
         // 延迟 100ms 后重新启动识别，避免频繁启停
         window.setTimeout(() => {
             try {
@@ -154,6 +147,7 @@ class WebSpeech {
     speak(done, text, callback) {
         // 初始化默认配置
         callback = callback || {};
+        this.listening = false;
         // 累加文本到缓冲区
         this.buffer += text ? text : '';
         // 文本结束时，立即播放缓冲区所有内容
@@ -271,7 +265,9 @@ class WebSpeech {
 class WebSpeechLoader {
     constructor() {
         this.id = `loading-${Date.now()}`;
+        if (document.getElementById(`${this.id}-style`)) return;
         this.style = document.createElement("style");
+        this.style.id = `${this.id}-style`;
         this.style.textContent = `
         @keyframes wave {from {transform: scaleY(1);}to {transform: scaleY(3);}}`;
         document.head.appendChild(this.style);
@@ -285,14 +281,14 @@ class WebSpeechLoader {
         display: flex;position: fixed;
         justify-content: center;align-items: center;
         top: 0;left: 0;width: 100vw;height: 100vh;
-        background-color: rgba(0, 0, 0, 0.3);z-index: 999999999;gap: 4px;`;
+        background-color: rgba(0, 0, 0, 0.3);z-index: 999999999;gap: 5px;`;
         for (let i = 1; i < 10; i++) {
             const bar = document.createElement('div');
             bar.style.cssText = `
-            width: 3px;height: 6px;
-            background-color: #07c160;border-radius: 2px;
+            width: 5px;height: 10px;
+            background-color: #16b777;border-radius: 2px;
             animation: wave 0.8s ease-in-out infinite alternate;
-            animation-delay: -0.${i}s;`;
+            animation-delay: -0.${i === 5 ? 0 : i}s;`;
             this.loader.appendChild(bar);
         }
         window.document.body.appendChild(this.loader);

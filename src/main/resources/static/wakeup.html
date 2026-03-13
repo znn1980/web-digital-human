@@ -29,7 +29,7 @@
 
         layui.human.init(layui.$('.human')[0], layui.$('canvas')[0], function () {
             layui.human.chat(`我是${layui.human.me.title}，说出“你好”来唤醒我吧！`, Date.now());
-            webSpeech.wakeup(['你好', `${layui.human.me.title}`], 1000 * 15, function (result) {
+            webSpeech.wakeup(['你好'], 1000 * 15, function (result) {
                 console.log('问：', result);
                 layui.human.chat(result);
                 const messages = [], uuid = Date.now() + 1000;

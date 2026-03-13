@@ -222,6 +222,7 @@
                             , layer: {
                                 cancel: function () {
                                     if (abortController) abortController.abort();
+                                    webSpeech.cancel();
                                     layui.$.ajax({url: `../ai/chat/${conversationId}`, type: 'DELETE'});
                                 }
                             }
