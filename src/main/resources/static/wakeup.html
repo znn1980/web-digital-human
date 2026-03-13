@@ -15,41 +15,38 @@
 <script src="human/fetch.event.source.js"></script>
 <script src="human/audio.media.js"></script>
 <script src="human/marked.min.js"></script>
+<script src="human/web-speech-api.js"></script>
 <script src="layui/layui.js"></script>
 <script>
     layui.config({
         base: 'human/',
         version: Date.now()
     }).extend({
-        human: '{/}human/human',
-        wakeup: '{/}human/wakeup'
-    }).use(['human', 'wakeup'], function () {
+        human: '{/}human/human'
+    }).use(['human'], function () {
+
+        const webSpeech = new WebSpeech();
 
         layui.human.init(layui.$('.human')[0], layui.$('canvas')[0], function () {
             layui.human.chat(`我是${layui.human.me.title}，说出“你好”来唤醒我吧！`, Date.now());
-            layui.wakeup.listen(['你好', `${layui.human.me.title}`], 1000 * 15, function (result) {
+            webSpeech.wakeup(['你好', `${layui.human.me.title}`], 1000 * 15, function (result) {
                 console.log('问：', result);
                 layui.human.chat(result);
                 const messages = [], uuid = Date.now() + 1000;
                 layui.human.send(result, function (done, text) {
                     if (done) {
                         console.log('答：', messages.join(''));
-                        //全部文字一起转语音
-                        /*layui.wakeup.speak(messages.join(''), function () {
-                            layui.human.speak();
-                        }, function () {
-                            layui.human.standby();
-                        });*/
                     }
                     if (text && text !== '') {
                         messages.push(text)
                         layui.human.chat(marked.parse(messages.join('')), uuid);
                     }
-                    //SSE异步结果拼接成完整的句子就先转一句语音
-                    layui.wakeup.say(done, text, function () {
-                        layui.human.speak();
-                    }, function () {
-                        layui.human.standby();
+                    webSpeech.speak(done, text, {
+                        play: function () {
+                            layui.human.speak();
+                        }, end: function () {
+                            layui.human.standby();
+                        }
                     });
                 });
             });
@@ -74,31 +71,34 @@
                             layui.human.request.model = layui.human.model[index].value;
                         }
                     });
-                    layui.wakeup.voices.forEach(function (value) {
+                    webSpeech.voices.forEach(function (value) {
                         if (data.title === value.name) {
-                            layui.wakeup.voice = value;
+                            webSpeech.voice = value;
                         }
                     });
                 }
             });
-            layui.wakeup.getVoices(function (sound) {
-                set.config.data.push({title: '音库', child: sound});
+            webSpeech.getVoices(function (voice) {
+                set.config.data.push({title: '音库', child: voice});
                 layui.dropdown.reloadData(set.config.id, {data: set.config.data});
             });
         });
 
         layui.$('canvas').on('click', function () {
-            layui.human.chat(`我是${layui.human.me.title}，说出“你好”来唤醒我吧！`, Date.now());
-            layui.wakeup.speak(`我是${layui.human.me.title}，说出“你好”来唤醒我吧！`, function () {
-                layui.human.speak();
-            }, function () {
-                layui.human.standby();
+            const text = `我是${layui.human.me.title}，说出“你好”来唤醒我吧！`;
+            layui.human.chat(text, Date.now());
+            webSpeech.speak(true, text, {
+                play: function () {
+                    layui.human.speak();
+                }, end: function () {
+                    layui.human.standby();
+                }
             });
         });
 
         layui.$('.layui-icon-pause').on('click', function () {
             layui.human.sse.close();
-            layui.wakeup.cancel();
+            webSpeech.cancel();
         });
 
     });

@@ -45,6 +45,7 @@
 </div>
 <script src="../human/fetch.event.source.js"></script>
 <script src="../human/markdown-it.min.js"></script>
+<script src="../human/web-speech-api.js"></script>
 <script src="../layui/layui.js"></script>
 <script src="https://api.map.baidu.com/api?v=1.0&type=webgl&ak=vlArPed8Ipa6Im77cbpq9Flok1BSJd18"></script>
 <script>
@@ -109,6 +110,7 @@
         layim: layui.cache.layimPath + 'layim'
     }).use(['layim'], function () {
 
+        const webSpeech = new WebSpeech();
         let abortController, conversationId = asUuid();
 
         layui.layim.on('sendMessage', function (data) {
@@ -189,31 +191,13 @@
                 {
                     name: 'mike', title: '语音输入', icon: 'layui-icon-mike'
                     , onClick: function () {
-                        const speechRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-                        speechRecognition.continuous = false;
-                        speechRecognition.interimResults = false;
-                        speechRecognition.lang = 'zh-CN';
-                        speechRecognition.maxAlternatives = 1;
-                        speechRecognition.onresult = function (e) {
-                            const result = e.results[e.results.length - 1][0].transcript.trim();
+                        webSpeech.listen(function (result) {
                             console.log('语音识别 => ', result);
-                            if (layui.$.trim(result) === '') return layui.layer.msg('未识别到文字');
+                            if (layui.$.trim(result) === '') {
+                                return layui.layer.msg('未识别到文字');
+                            }
                             layui.layim.sendMessage(result);
-                        }
-                        speechRecognition.onstart = function () {
-                            console.log('~~~开始语音识别~~~');
-                            layui.layer.load(2);
-                        };
-                        speechRecognition.onend = function () {
-                            console.log('~~~结束语音识别~~~');
-                            layui.layer.closeAll('loading');
-                        };
-                        speechRecognition.onerror = function (e) {
-                            console.error('语音识别错误 => ', e.error);
-                            layui.layer.closeAll('loading');
-                            layui.layer.msg(e.error);
-                        };
-                        speechRecognition.start();
+                        });
                     }
                 }]);
 
