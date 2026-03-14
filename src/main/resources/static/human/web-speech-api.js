@@ -152,83 +152,67 @@ class WebSpeech {
         this.buffer += text ? text : '';
         // 文本结束时，立即播放缓冲区所有内容
         if (done) {
-            this.play(this.buffer, callback);
+            this.queue.push(this.buffer);
+            if (!this.speaking) this.play(callback);
             this.buffer = '';
             return;
         }
         // 按标点符号分句播放，实现自然停顿
         let index;
         while ((index = this.buffer.search(this.reg)) !== -1) {
-            this.play(this.buffer.substring(0, index + 1), callback);
+            this.queue.push(this.buffer.substring(0, index + 1));
+            if (!this.speaking) this.play(callback);
             this.buffer = this.buffer.substring(index + 1);
         }
     }
 
     /**
-     * 执行语音合成播放
-     * 创建语音合成实例并播放指定文本，管理播放队列和回调
-     * @param {string} text - 要播放的文本内容
+     * 播放语音队列中的文本
+     * 从队列中取出文本进行语音合成播放，递归处理队列中的所有文本
      * @param {Object} [callback] - 回调配置对象
      * @param {function} [callback.play] - 开始播放时的回调函数
      * @param {function} [callback.end] - 播放结束时的回调函数
      * @returns {void}
      */
-    play(text, callback) {
-        // 初始化默认配置
-        callback = callback || {};
-        // 验证文本内容和浏览器支持
-        if (!text || text === '' || !window.speechSynthesis) return;
-        // 将文本添加到播放队列
-        this.queue.push(text);
-        // 设置正在说话状态，暂停语音识别监听
+    play(callback) {
+        // 队列为空时，重置状态并执行结束回调
+        if (this.queue.length === 0) {
+            this.speaking = false;
+            if (this.speechRecognition.continuous) {
+                this.resume();
+            }
+            typeof callback.end === 'function' && callback.end();
+            return;
+        }
+        // 设置说话状态并停止语音识别，避免干扰
         this.speaking = true;
         this.listening = false;
         this.speechRecognition.stop();
-        // 创建语音合成实例
+        // 创建语音合成实例并配置参数
+        const text = this.queue.shift();
         const utterance = new SpeechSynthesisUtterance();
         utterance.text = text;
         utterance.lang = this.speechRecognition.lang;
         if (this.voice) {
             utterance.voice = this.voice;
         }
-        // 处理播放开始事件
+        // 绑定语音合成开始事件
         utterance.onstart = () => {
             console.log('~~~开始语音合成~~~');
-            const value = this.queue.shift();
-            console.log('语音合成：', value);
+            console.log('语音合成：', text, this.queue.length);
             typeof callback.play === 'function' && callback.play();
         }
-        // 处理播放结束事件
+        // 绑定语音合成结束事件，递归播放下一句
         utterance.onend = () => {
             console.log('~~~结束语音合成~~~');
-            this.close(callback.end);
+            this.play(callback);
         }
-        // 处理播放错误事件
+        // 绑定语音合成错误事件，继续播放下一句
         utterance.onerror = (e) => {
             console.error('语音合成错误：', e.error);
-            this.close(callback.end);
+            this.play(callback);
         }
-        // 执行语音合成播放
         window.speechSynthesis.speak(utterance);
-    }
-
-    /**
-     * 关闭语音合成播放
-     * 当播放队列为空时，重置说话状态并执行结束回调
-     * @param {function} [callback] - 播放完全结束时的回调函数
-     * @returns {void}
-     */
-    close(callback) {
-        // 播放队列为空时，表示所有语音已播放完成
-        if (this.queue.length === 0) {
-            // 重置说话状态为 false
-            this.speaking = false;
-            if (this.speechRecognition.continuous) {
-                this.resume();
-            }
-            // 执行结束回调函数
-            typeof callback === 'function' && callback();
-        }
     }
 
     /**
@@ -241,9 +225,7 @@ class WebSpeech {
         this.queue = [];// 清空播放队列
         this.listening = false;// 重置监听状态
         // 停止浏览器语音合成服务
-        if (window.speechSynthesis) {
-            window.speechSynthesis.cancel();
-        }
+        window.speechSynthesis.cancel();
     }
 
     getVoices(callback) {
