@@ -7,7 +7,7 @@ human:
     access-key-secret:
   chat:
     api-key:
-    base-url: https://qianfan.baidubce.com/v2
+    base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
     models:
       - title: DeepSeek-V3
         value: deepseek-v3
@@ -18,11 +18,15 @@ spring:
   ai:
     openai:
       api-key:
-      base-url: https://qianfan.baidubce.com
+      base-url: https://dashscope.aliyuncs.com/compatible-mode
       chat:
-        completions-path: /v2/chat/completions
+        completions-path: /v1/chat/completions
         options:
           model: deepseek-v3.2
+      embedding:
+        embeddings-path: /v1/embeddings
+        options:
+          model: text-embedding-v4
 
 server:
   port: 8080
@@ -34,5 +38,6 @@ server:
 logging:
   level:
     web.digital.human: info
+    org.springframework.ai: debug
   file:
     name: logs/web-digital-human.log

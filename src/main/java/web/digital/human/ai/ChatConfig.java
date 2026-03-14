@@ -5,12 +5,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.reader.TextReader;
+import org.springframework.ai.reader.markdown.MarkdownDocumentReader;
+import org.springframework.ai.reader.markdown.config.MarkdownDocumentReaderConfig;
+import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
+import org.springframework.ai.reader.tika.TikaDocumentReader;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
@@ -22,11 +32,6 @@ import java.io.IOException;
  */
 @Configuration
 public class ChatConfig {
-
-    @Value("classpath:/static/ai-hotels/default-system.md")
-    private Resource defaultSystem;
-    @Value("classpath:/static/ai-hotels/hotel.json")
-    private Resource hotel;
 
     @Bean
     public ChatMemoryRepository chatMemoryRepository() {
@@ -44,23 +49,45 @@ public class ChatConfig {
 
     @Bean
     public ChatClient chatClient(ChatClient.Builder builder
-            , ChatMemory chatMemory, ChatTools chatTools
+            , ChatMemory chatMemory, ChatTools chatTools, VectorStore vectorStore
             , SystemPromptTemplate systemPromptTemplate) {
         return builder
                 .defaultTools(chatTools)
                 .defaultSystem(systemPromptTemplate.render())
                 .defaultAdvisors(
-                        new SimpleLoggerAdvisor()
+                        SimpleLoggerAdvisor.builder().build()
                         , MessageChatMemoryAdvisor.builder(chatMemory).build()
+                        , QuestionAnswerAdvisor.builder(vectorStore).build()
                 )
                 .build();
     }
 
     @Bean
-    public SystemPromptTemplate systemPromptTemplate(ObjectMapper mapper) throws IOException {
+    public SystemPromptTemplate systemPromptTemplate(ObjectMapper mapper
+            , @Value("classpath:/static/ai-hotels/default-system.md") Resource defaultSystem
+            , @Value("classpath:/static/ai-hotels/hotel.json") Resource hotel) throws IOException {
         return SystemPromptTemplate.builder()
                 .resource(defaultSystem)
                 .variables(mapper.readValue(hotel.getURL(), new TypeReference<>() {
                 })).build();
+    }
+
+    @Bean
+    public VectorStore vectorStore(EmbeddingModel embeddingModel) {
+        return SimpleVectorStore.builder(embeddingModel).build();
+    }
+
+    @Bean
+    public ApplicationRunner runner(VectorStore vectorStore
+            , @Value("classpath:/static/ai-hotels/知识库/墨历V酒店.docx") Resource doc
+            , @Value("classpath:/static/ai-hotels/知识库/墨历V酒店.md") Resource md
+            , @Value("classpath:/static/ai-hotels/知识库/墨历V酒店.pdf") Resource pdf
+            , @Value("classpath:/static/ai-hotels/知识库/墨历V酒店.txt") Resource txt) {
+        return args -> {
+            vectorStore.add(new TikaDocumentReader(doc).get());
+            vectorStore.add(new MarkdownDocumentReader(md, MarkdownDocumentReaderConfig.defaultConfig()).get());
+            vectorStore.add(new PagePdfDocumentReader(pdf).get());
+            vectorStore.add(new TextReader(txt).get());
+        };
     }
 }
