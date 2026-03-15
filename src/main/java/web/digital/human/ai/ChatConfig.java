@@ -12,11 +12,14 @@ import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.reader.ExtractedTextFormatter;
 import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.reader.markdown.MarkdownDocumentReader;
 import org.springframework.ai.reader.markdown.config.MarkdownDocumentReaderConfig;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
+import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
+import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
@@ -79,15 +82,15 @@ public class ChatConfig {
 
     @Bean
     public ApplicationRunner runner(VectorStore vectorStore
-            , @Value("classpath:/static/ai-hotels/知识库/墨历V酒店.docx") Resource doc
-            , @Value("classpath:/static/ai-hotels/知识库/墨历V酒店.md") Resource md
-            , @Value("classpath:/static/ai-hotels/知识库/墨历V酒店.pdf") Resource pdf
-            , @Value("classpath:/static/ai-hotels/知识库/墨历V酒店.txt") Resource txt) {
+            , @Value("classpath:/static/ai-hotels/知识库/墨历酒店.docx") Resource doc
+            , @Value("classpath:/static/ai-hotels/知识库/墨历酒店.md") Resource md
+            , @Value("classpath:/static/ai-hotels/知识库/墨历酒店.pdf") Resource pdf
+            , @Value("classpath:/static/ai-hotels/知识库/墨历酒店.txt") Resource txt) {
         return args -> {
-            vectorStore.add(new TikaDocumentReader(doc).get());
+            vectorStore.add(new TikaDocumentReader(doc, ExtractedTextFormatter.defaults()).get());
             vectorStore.add(new MarkdownDocumentReader(md, MarkdownDocumentReaderConfig.defaultConfig()).get());
-            vectorStore.add(new PagePdfDocumentReader(pdf).get());
-            vectorStore.add(new TextReader(txt).get());
+            vectorStore.add(new PagePdfDocumentReader(pdf, PdfDocumentReaderConfig.defaultConfig()).get());
+            vectorStore.add(TokenTextSplitter.builder().build().apply(new TextReader(txt).get()));
         };
     }
 }

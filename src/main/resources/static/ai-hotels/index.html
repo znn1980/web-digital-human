@@ -133,7 +133,9 @@
                         console.log('msg => ', msg);
                         const data = JSON.parse(msg.data);
                         data?.result?.output?.text && messages.push(data.result.output.text);
-                        layui.layim.getMessage({...receiver, content: messages.join(''), finished: false});
+                        if (layui.$.trim(messages.join(''))) {
+                            layui.layim.getMessage({...receiver, content: messages.join(''), finished: false});
+                        }
                     }
                     , onerror: function (error) {
                         layui.layim.getMessage({...receiver, content: `**错误信息：** ${error}`, finished: true});
@@ -148,7 +150,7 @@
 
         const md = markdownit({typographer: true, linkify: true, breaks: true});
         layui.layim.callback('contentParser', function (data) {
-            return md.render(data).replace('<table>', '<table class="layui-table" lay-size="sm">');
+            return md.render(data).replaceAll('<table>', '<table class="layui-table" lay-size="sm">');
         });
 
         layui.layim.on('chatInit', function (obj) {
