@@ -28,6 +28,18 @@ spring:
         options:
           model: text-embedding-v4
 
+    dashscope:
+      api-key:
+      base-url: https://dashscope.aliyuncs.com
+      chat:
+        options:
+          model: deepseek-v3.2
+          enable_search: true
+          enable-thinking: false
+      embedding:
+        options:
+          model: text-embedding-v4
+
 server:
   port: 8080
   ssl:

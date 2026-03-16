@@ -1,5 +1,7 @@
 package web.digital.human.ai;
 
+import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
+import com.alibaba.cloud.ai.dashscope.embedding.DashScopeEmbeddingModel;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.client.ChatClient;
@@ -11,7 +13,6 @@ import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
-import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.reader.ExtractedTextFormatter;
 import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.reader.markdown.MarkdownDocumentReader;
@@ -20,6 +21,7 @@ import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,11 +40,13 @@ public class ChatConfig {
 
     @Bean
     public ChatMemoryRepository chatMemoryRepository() {
+        //注入：内存聊天记忆仓库
         return new InMemoryChatMemoryRepository();
     }
 
     @Bean
     public ChatMemory chatMemory(ChatMemoryRepository chatMemoryRepository) {
+        //注入：内存聊天记忆
         return MessageWindowChatMemory.builder()
                 .chatMemoryRepository(chatMemoryRepository)
                 .maxMessages(200)
@@ -51,16 +55,25 @@ public class ChatConfig {
 
 
     @Bean
-    public ChatClient chatClient(ChatClient.Builder builder
+    public ChatClient chatClient(DashScopeChatModel chatModel
             , ChatMemory chatMemory, ChatTools chatTools, VectorStore vectorStore
             , SystemPromptTemplate systemPromptTemplate) {
-        return builder
+        return ChatClient.builder(chatModel)
+                //ToolsCalling：模拟酒店查询房价、预订、等功能
                 .defaultTools(chatTools)
+                //系统提示词
                 .defaultSystem(systemPromptTemplate.render())
                 .defaultAdvisors(
+                        //日志
                         SimpleLoggerAdvisor.builder().build()
+                        //聊天记忆
                         , MessageChatMemoryAdvisor.builder(chatMemory).build()
-                        , QuestionAnswerAdvisor.builder(vectorStore).build()
+                        //知识库
+                        , QuestionAnswerAdvisor.builder(vectorStore)
+                                .searchRequest(SearchRequest.builder()
+                                        .similarityThreshold(0.7)
+                                        .topK(4)
+                                        .build()).build()
                 )
                 .build();
     }
@@ -69,6 +82,7 @@ public class ChatConfig {
     public SystemPromptTemplate systemPromptTemplate(ObjectMapper mapper
             , @Value("classpath:/static/ai-hotels/default-system.md") Resource defaultSystem
             , @Value("classpath:/static/ai-hotels/hotel.json") Resource hotel) throws IOException {
+        //注入：系统提示词
         return SystemPromptTemplate.builder()
                 .resource(defaultSystem)
                 .variables(mapper.readValue(hotel.getURL(), new TypeReference<>() {
@@ -76,7 +90,8 @@ public class ChatConfig {
     }
 
     @Bean
-    public VectorStore vectorStore(EmbeddingModel embeddingModel) {
+    public VectorStore vectorStore(DashScopeEmbeddingModel embeddingModel) {
+        //注入：基于内存的向量存储
         return SimpleVectorStore.builder(embeddingModel).build();
     }
 
@@ -86,6 +101,7 @@ public class ChatConfig {
             , @Value("classpath:/static/ai-hotels/知识库/墨历酒店.md") Resource md
             , @Value("classpath:/static/ai-hotels/知识库/墨历酒店.pdf") Resource pdf
             , @Value("classpath:/static/ai-hotels/知识库/墨历酒店.txt") Resource txt) {
+        //加载（RAG）知识库
         return args -> {
             vectorStore.add(new TikaDocumentReader(doc, ExtractedTextFormatter.defaults()).get());
             vectorStore.add(new MarkdownDocumentReader(md, MarkdownDocumentReaderConfig.defaultConfig()).get());
