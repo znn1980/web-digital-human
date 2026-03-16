@@ -4,7 +4,7 @@ layui.define(function (exports) {
         app_id: '',
         app_key: '',
         open: function (callback) {
-            const loading = layui.layer.load(0);
+            const loading = layui.layer.load(2);
             $asr.ws = new WebSocket(`wss://vop.baidu.com/realtime_asr?sn=${Date.now()}`);
             $asr.ws.onopen = function () {
                 layui.layer.close(loading);
@@ -68,7 +68,7 @@ layui.define(function (exports) {
             }
         },
         asr: function (blob, callback) {
-            const loading = layui.layer.load(0);
+            const loading = layui.layer.load(2);
             const fileReader = new FileReader();
             fileReader.onload = function (e) {
                 console.log(e.target.result);

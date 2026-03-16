@@ -4,7 +4,7 @@ layui.define(function (exports) {
         task_id: null,
         app_key: '',
         open: function (callback) {
-            const loading = layui.layer.load(0);
+            const loading = layui.layer.load(2);
             layui.$.get('aliyun/credentials', function (data) {
                 console.log(data);
                 $asr.ws = new WebSocket(`wss://nls-gateway.cn-shanghai.aliyuncs.com/ws/v1?token=${data}`);
@@ -95,7 +95,7 @@ layui.define(function (exports) {
             }
         },
         asr: function (blob, callback) {
-            const loading = layui.layer.load(0);
+            const loading = layui.layer.load(2);
             const fileReader = new FileReader();
             fileReader.onload = function (e) {
                 console.log(e.target.result);

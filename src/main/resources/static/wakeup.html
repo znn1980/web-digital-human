@@ -15,21 +15,19 @@
 <script src="human/fetch.event.source.js"></script>
 <script src="human/audio.media.js"></script>
 <script src="human/marked.min.js"></script>
-<script src="human/web-speech-api.js"></script>
 <script src="layui/layui.js"></script>
 <script>
     layui.config({
         base: 'human/',
         version: Date.now()
     }).extend({
-        human: '{/}human/human'
-    }).use(['human'], function () {
-
-        const webSpeech = new WebSpeech();
+        human: '{/}human/human',
+        wakeup: '{/}human/wakeup'
+    }).use(['human', 'wakeup'], function () {
 
         layui.human.init(layui.$('.human')[0], layui.$('canvas')[0], function () {
             layui.human.chat(`我是${layui.human.me.title}，说出“你好”来唤醒我吧！`, Date.now());
-            webSpeech.wakeup(['你好'], 1000 * 15, function (result) {
+            layui.wakeup.listen(['你好'], 1000 * 15, function (result) {
                 console.log('问：', result);
                 layui.human.chat(result);
                 const messages = [], uuid = Date.now() + 1000;
@@ -41,13 +39,12 @@
                         messages.push(text)
                         layui.human.chat(marked.parse(messages.join('')), uuid);
                     }
-                    webSpeech.speak(done, text, {
-                        play: function () {
+                    layui.wakeup.speak(done, text
+                        , function () {
                             layui.human.speak();
-                        }, end: function () {
+                        }, function () {
                             layui.human.standby();
-                        }
-                    });
+                        });
                 });
             });
         });
@@ -71,14 +68,14 @@
                             layui.human.request.model = layui.human.model[index].value;
                         }
                     });
-                    webSpeech.voices.forEach(function (value) {
+                    layui.wakeup.voices.forEach(function (value) {
                         if (data.title === value.name) {
-                            webSpeech.voice = value;
+                            layui.wakeup.voice = value;
                         }
                     });
                 }
             });
-            webSpeech.getVoices(function (voice) {
+            layui.wakeup.getVoices(function (voice) {
                 set.config.data.push({title: '音库', child: voice});
                 layui.dropdown.reloadData(set.config.id, {data: set.config.data});
             });
@@ -87,18 +84,17 @@
         layui.$('canvas').on('click', function () {
             const text = `我是${layui.human.me.title}，说出“你好”来唤醒我吧！`;
             layui.human.chat(text, Date.now());
-            webSpeech.speak(true, text, {
-                play: function () {
+            layui.wakeup.speak(true, text
+                , function () {
                     layui.human.speak();
-                }, end: function () {
+                }, function () {
                     layui.human.standby();
-                }
-            });
+                });
         });
 
         layui.$('.layui-icon-pause').on('click', function () {
             layui.human.sse.close();
-            webSpeech.cancel();
+            layui.wakeup.cancel();
         });
 
     });

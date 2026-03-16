@@ -57,9 +57,9 @@ layui.define(function (exports) {
             }];
             $human.me = human;
             $human.stop();
-            const loading = layui.layer.msg('数字人，加载中...', {
-                icon: 16, shade: 0.3, time: 0,
-                content: '<span id="loading">数字人，加载中...<span>'
+            const loading = layui.layer.load(2, {
+                time: 0, shade: 0.6, shadeClose: false,
+                content: '<span id="loading" style="color:white;position:absolute;left:-60px;width:200px;">加载中...<span>'
             });
             //加载数字人待机形象
             $human.frames.standby = [];
@@ -80,7 +80,7 @@ layui.define(function (exports) {
             frames.forEach(function (value) {
                 $human.onload(value, function () {
                     length++;
-                    layui.$('#loading').html(`数字人，加载中...（${Math.round(length / frames.length * 100)}%）`);
+                    layui.$('#loading').html(`加载中...（${Math.round(length / frames.length * 100)}%）`);
                     if (length === frames.length) {
                         $human.draw($human.frames.standby[0]);
                         $human.standby();
@@ -173,7 +173,7 @@ layui.define(function (exports) {
             $human.request.messages.push({role: 'user', content: text});
             console.log($human.request);
             $human.sse.abort = new AbortController();
-            const loading = layui.layer.load(0);
+            const loading = layui.layer.load(2);
             SSE.fetchEventSource('chat/completions', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},

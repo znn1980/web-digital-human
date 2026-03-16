@@ -91,9 +91,9 @@
             const duration = 30;
             audioRecorder.open().then(function (stream) {
                 console.log('开始录音...');
-                const loading = layui.layer.msg('录音中...', {
-                    time: 0, icon: 16, shade: 0.3, shadeClose: true,
-                    content: '<span id="loading">录音中...（30秒）<span>',
+                const loading = layui.layer.load(2, {
+                    time: 0, shade: 0.6, shadeClose: true,
+                    content: '<span id="loading" style="color:white;position:absolute;left:-60px;width:200px;">录音中...<span>',
                     end: function () {
                         console.log('停止录音...');
                         const blob = audioRecorder.pcm();

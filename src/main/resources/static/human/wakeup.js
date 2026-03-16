@@ -1,15 +1,20 @@
 layui.define(function (exports) {
+
     const $wakeup = {
         lang: 'zh-CN',
         voices: [],
         voice: null,
         listening: false,
         speaking: false,
-        synthesis: new SpeechSynthesisUtterance(),
-        recognition: new (window.SpeechRecognition || window.webkitSpeechRecognition)(),
+        recognition: null,
+        buffer: '',
+        reg: /[。！？：；.!?:;\n]/,
+        speaks: [],
         listen: function (keywords, timeout, callback) {
+            $wakeup.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             $wakeup.recognition.continuous = true;
             $wakeup.recognition.interimResults = false;
+            $wakeup.recognition.maxAlternatives = 1;
             $wakeup.recognition.lang = $wakeup.lang;
             $wakeup.recognition.onresult = (e) => {
                 const result = e.results[e.results.length - 1][0].transcript.trim();
@@ -18,17 +23,18 @@ layui.define(function (exports) {
                 //唤醒词匹配 1.其中一个匹配 2.全部匹配
                 //keywords.some(keyword => result.includes(keyword))
                 //keywords.every(keyword => result.includes(keyword))
-                if (!$wakeup.listening && keywords.some(keyword => result.includes(keyword))) {//唤醒词
+                if (!$wakeup.listening && keywords.every(keyword => result.includes(keyword))) {//唤醒词
                     $wakeup.listening = true;
-                    layui.layer.msg('我在听，请说出您的问题。', {
-                        time: timeout, icon: 16, shade: 0.3, shadeClose: false
+                    layui.layer.load(2, {
+                        time: timeout, shade: 0.6, shadeClose: false
+                        , content: '<span style="color:white;position:absolute;left:-60px;width:200px;">我在听...</span>'
                         , end: function () {
                             $wakeup.listening = false;
                             console.log('我在听，超时...');
                         }
                     });
                 } else if (this.listening) {
-                    layui.layer.closeLast('dialog', function () {
+                    layui.layer.closeLast('loading', function () {
                         $wakeup.listening = true;
                         typeof callback === 'function' && callback(result);
                     });
@@ -47,98 +53,70 @@ layui.define(function (exports) {
             };
             $wakeup.recognition.start();
         },
-        speak: function (text, start, end) {
-            if ($wakeup.speaking || !text || text === '') return;
-            if ($wakeup.listening) window.speechSynthesis.cancel();
-            $wakeup.speaking = true;
+        speak: function (done, text, start, end) {
             $wakeup.listening = false;
-            $wakeup.recognition.stop();
-            $wakeup.synthesis.text = text;
-            $wakeup.synthesis.lang = $wakeup.lang;
-            if ($wakeup.voice) $wakeup.synthesis.voice = $wakeup.voice;
-            $wakeup.synthesis.onstart = () => {
-                console.log('~~~开始语音合成~~~');
-                $wakeup.speaking = true;
-                $wakeup.listening = false;
-                typeof start === 'function' && start();
-            };
-            $wakeup.synthesis.onend = () => {
-                console.log('~~~结束语音合成~~~');
-                $wakeup.speaking = false;
-                $wakeup.resume();
-                typeof end === 'function' && end();
-            };
-            $wakeup.synthesis.onerror = (e) => {
-                console.error('语音合成错误:', e.error);
-                $wakeup.speaking = false;
-                $wakeup.resume();
-                typeof end === 'function' && end();
-            };
-            window.speechSynthesis.speak($wakeup.synthesis);
-        },
-        buffer: '',
-        reg: /[。！？：；.!?:;]/,
-        say: function (done, text, start, end) {
             $wakeup.buffer += text ? text : '';
             if (done) {
-                $wakeup.push($wakeup.buffer, start, end);
-                $wakeup.buffer = '';
-            } else {
-                let index;
-                while ((index = $wakeup.buffer.search($wakeup.reg)) !== -1) {
-                    const value = $wakeup.buffer.substring(0, index + 1);
-                    $wakeup.push(value, start, end);
-                    $wakeup.buffer = $wakeup.buffer.substring(index + 1);
-                }
+                $wakeup.speaks.push(this.buffer);
+                if (!$wakeup.speaking) $wakeup.play(start, end);
+                return $wakeup.buffer = '';
+            }
+            let index;
+            while ((index = $wakeup.buffer.search($wakeup.reg)) !== -1) {
+                $wakeup.speaks.push($wakeup.buffer.substring(0, index + 1));
+                if (!$wakeup.speaking) $wakeup.play(start, end);
+                $wakeup.buffer = $wakeup.buffer.substring(index + 1);
             }
         },
-        speaks: [],
-        push: function (text, start, end) {
-            if (!text || text === '') return;
-            $wakeup.speaks.push(text);
+        play: function (start, end) {
+            if ($wakeup.speaks.length === 0) {
+                $wakeup.speaking = false;
+                if ($wakeup.recognition.continuous) {
+                    $wakeup.resume();
+                }
+                return typeof end === 'function' && end();
+            }
             $wakeup.speaking = true;
             $wakeup.listening = false;
             $wakeup.recognition.stop();
-            const synthesis = new SpeechSynthesisUtterance();
-            synthesis.text = text;
-            synthesis.lang = $wakeup.lang;
-            if ($wakeup.voice) synthesis.voice = $wakeup.voice;
-            synthesis.onstart = () => {
+            const text = $wakeup.speaks.shift();
+            const utterance = new SpeechSynthesisUtterance();
+            utterance.text = text;
+            utterance.lang = $wakeup.recognition.lang;
+            if ($wakeup.voice) {
+                utterance.voice = $wakeup.voice;
+            }
+            utterance.onstart = () => {
                 console.log('~~~开始语音合成~~~');
-                const value = $wakeup.speaks.shift();
-                console.log('语音合成:', value);
+                console.log('语音合成：', text, $wakeup.speaks.length);
                 typeof start === 'function' && start();
-            };
-            synthesis.onend = () => {
+            }
+            utterance.onend = () => {
                 console.log('~~~结束语音合成~~~');
-                if ($wakeup.speaks.length === 0) {
-                    $wakeup.speaking = false;
-                    $wakeup.resume();
-                    typeof end === 'function' && end();
-                }
-            };
-            synthesis.onerror = (e) => {
-                console.error('语音合成错误:', e.error);
-                if ($wakeup.speaks.length === 0) {
-                    $wakeup.speaking = false;
-                    $wakeup.resume();
-                    typeof end === 'function' && end();
-                }
-            };
-            window.speechSynthesis.speak(synthesis);
+                $wakeup.play(start, end);
+            }
+            utterance.onerror = (e) => {
+                console.error('语音合成错误：', e.error);
+                $wakeup.play(start, end);
+            }
+            window.speechSynthesis.speak(utterance);
         },
         resume: function () {
-            if ($wakeup.speaking) return;
             $wakeup.recognition.stop();
-            if (!$wakeup.speaking) {
-                $wakeup.recognition.start();
-            }
+            if ($wakeup.speaking) return;
+            window.setTimeout(function () {
+                try {
+                    $wakeup.recognition.start();
+                } catch (e) {
+                    console.error('重启语音识别失败：', e);
+                }
+            }, 100);
         },
         cancel: function () {
             $wakeup.buffer = '';
             $wakeup.speaks = [];
-            window.speechSynthesis.cancel();
             $wakeup.listening = false;
+            window.speechSynthesis.cancel();
         },
         getVoices: function (callback) {
             window.speechSynthesis.onvoiceschanged = () => {
