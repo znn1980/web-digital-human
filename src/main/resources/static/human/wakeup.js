@@ -26,8 +26,9 @@ layui.define(function (exports) {
                 if (!$wakeup.listening && keywords.every(keyword => result.includes(keyword))) {//唤醒词
                     $wakeup.listening = true;
                     layui.layer.load(2, {
-                        time: timeout, shade: 0.6, shadeClose: false
-                        , content: '<span style="color:white;position:absolute;left:-60px;width:200px;">我在听...</span>'
+                        time: timeout, shade: 0.6, shadeClose: true
+                        , content: '<span style="font-weight:bold;color:white;' +
+                            'position:absolute;left:-20px;width:120px;">我在听...</span>'
                         , end: function () {
                             $wakeup.listening = false;
                             console.log('我在听，超时...');

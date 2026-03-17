@@ -59,7 +59,8 @@ layui.define(function (exports) {
             $human.stop();
             const loading = layui.layer.load(2, {
                 time: 0, shade: 0.6, shadeClose: false,
-                content: '<span id="loading" style="color:white;position:absolute;left:-60px;width:200px;">加载中...<span>'
+                content: '<span id="loading" style="font-weight:bold;color:white;' +
+                    'position:absolute;left:-20px;width:120px;">加载中...<span>'
             });
             //加载数字人待机形象
             $human.frames.standby = [];

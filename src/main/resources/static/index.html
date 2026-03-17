@@ -93,7 +93,8 @@
                 console.log('开始录音...');
                 const loading = layui.layer.load(2, {
                     time: 0, shade: 0.6, shadeClose: true,
-                    content: '<span id="loading" style="color:white;position:absolute;left:-60px;width:200px;">录音中...<span>',
+                    content: '<span id="loading" style="font-weight:bold;color:white;' +
+                        'position:absolute;left:-20px;width:120px;">录音中...<span>',
                     end: function () {
                         console.log('停止录音...');
                         const blob = audioRecorder.pcm();
@@ -106,7 +107,7 @@
                 });
                 audioRecorder.start(stream, function (params) {
                     console.log(params);
-                    layui.$('#loading').html('录音中...（' + (duration - parseInt(params.duration)) + '秒）按下停止');
+                    layui.$('#loading').html('录音中...（' + (duration - parseInt(params.duration)) + '秒）<br>按下发送');
                     if (params.duration > duration) layui.layer.close(loading);
                 });
             }, function (error) {
