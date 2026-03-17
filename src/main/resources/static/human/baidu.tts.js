@@ -1,4 +1,4 @@
-layui.define(function (exports) {
+layui.define(['assert'], function (exports) {
     const $tts = {
         ws: null,
         sound: [
@@ -9,6 +9,7 @@ layui.define(function (exports) {
         ],
         voice: 0,
         open: function (callback) {
+            layui.assert.limit();
             const loading = layui.layer.load(2);
             layui.$.get('baidu/credentials', function (data) {
                 $tts.ws = new WebSocket(`wss://aip.baidubce.com/ws/2.0/speech/publiccloudspeech/v1/tts?access_token=${data}&per=${$tts.voice}`);

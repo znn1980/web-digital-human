@@ -21,10 +21,10 @@
         base: 'human/',
         version: Date.now()
     }).extend({
-        human: '{/}human/human',
         tts: '{/}human/baidu.tts',
         asr: '{/}human/baidu.asr'
     }).use(['human', 'tts', 'asr'], function () {
+
         const audioOptions = {sampleRate: 16000, sampleBits: 16, numberChannels: 1};
         const audioRecorder = new AudioRecorder(audioOptions);
         const audioPlayer = new AudioPlayer(audioOptions
@@ -94,7 +94,7 @@
                 const loading = layui.layer.load(2, {
                     time: 0, shade: 0.6, shadeClose: true,
                     content: '<span id="loading" style="font-weight:bold;color:white;' +
-                        'position:absolute;left:-20px;width:120px;">录音中...<span>',
+                        'position:absolute;left:-30px;width:150px;">录音中...<span>',
                     end: function () {
                         console.log('停止录音...');
                         const blob = audioRecorder.pcm();

@@ -1,4 +1,4 @@
-layui.define(function (exports) {
+layui.define(['assert'], function (exports) {
     const $tts = {
         ws: null,
         task_id: null,
@@ -9,6 +9,7 @@ layui.define(function (exports) {
         ],
         voice: 'xiaoyun',
         open: function (callback) {
+            layui.assert.limit();
             const loading = layui.layer.load(2);
             layui.$.get('aliyun/credentials', function (data) {
                 console.log(data);

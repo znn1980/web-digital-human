@@ -1,4 +1,4 @@
-layui.define(function (exports) {
+layui.define(['assert'], function (exports) {
     const $human = {
         //画布
         ctx: null,
@@ -60,7 +60,7 @@ layui.define(function (exports) {
             const loading = layui.layer.load(2, {
                 time: 0, shade: 0.6, shadeClose: false,
                 content: '<span id="loading" style="font-weight:bold;color:white;' +
-                    'position:absolute;left:-20px;width:120px;">加载中...<span>'
+                    'position:absolute;left:-30px;width:150px;">加载中...<span>'
             });
             //加载数字人待机形象
             $human.frames.standby = [];
@@ -170,6 +170,7 @@ layui.define(function (exports) {
         },
         //说话
         send: function (text, callback) {
+            layui.assert.limit();
             $human.response.messages = [];
             $human.request.messages.push({role: 'user', content: text});
             console.log($human.request);

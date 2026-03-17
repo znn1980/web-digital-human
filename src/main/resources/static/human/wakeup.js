@@ -28,7 +28,7 @@ layui.define(function (exports) {
                     layui.layer.load(2, {
                         time: timeout, shade: 0.6, shadeClose: true
                         , content: '<span style="font-weight:bold;color:white;' +
-                            'position:absolute;left:-20px;width:120px;">我在听...</span>'
+                            'position:absolute;left:-30px;width:150px;">我在听...</span>'
                         , end: function () {
                             $wakeup.listening = false;
                             console.log('我在听，超时...');
