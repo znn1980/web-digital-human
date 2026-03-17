@@ -9,7 +9,7 @@ layui.define(['assert'], function (exports) {
         ],
         voice: 0,
         open: function (callback) {
-            layui.assert.limit();
+            layui.assert.limit('tts');
             const loading = layui.layer.load(2);
             layui.$.get('baidu/credentials', function (data) {
                 $tts.ws = new WebSocket(`wss://aip.baidubce.com/ws/2.0/speech/publiccloudspeech/v1/tts?access_token=${data}&per=${$tts.voice}`);

@@ -9,7 +9,7 @@ layui.define(['assert'], function (exports) {
         ],
         voice: 'xiaoyun',
         open: function (callback) {
-            layui.assert.limit();
+            layui.assert.limit('tts');
             const loading = layui.layer.load(2);
             layui.$.get('aliyun/credentials', function (data) {
                 console.log(data);

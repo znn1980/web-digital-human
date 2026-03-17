@@ -4,7 +4,7 @@ layui.define(['assert'], function (exports) {
         task_id: null,
         app_key: '',
         open: function (callback) {
-            layui.assert.limit();
+            layui.assert.limit('asr');
             const loading = layui.layer.load(2);
             layui.$.get('aliyun/credentials', function (data) {
                 console.log(data);
@@ -96,7 +96,7 @@ layui.define(['assert'], function (exports) {
             }
         },
         asr: function (blob, callback) {
-            layui.assert.limit();
+            layui.assert.limit('asr');
             const loading = layui.layer.load(2);
             const fileReader = new FileReader();
             fileReader.onload = function (e) {

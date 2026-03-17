@@ -170,7 +170,7 @@ layui.define(['assert'], function (exports) {
         },
         //说话
         send: function (text, callback) {
-            layui.assert.limit();
+            layui.assert.limit('chat');
             $human.response.messages = [];
             $human.request.messages.push({role: 'user', content: text});
             console.log($human.request);

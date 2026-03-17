@@ -4,7 +4,7 @@ layui.define(['assert'], function (exports) {
         app_id: '',
         app_key: '',
         open: function (callback) {
-            layui.assert.limit();
+            layui.assert.limit('asr');
             const loading = layui.layer.load(2);
             $asr.ws = new WebSocket(`wss://vop.baidu.com/realtime_asr?sn=${Date.now()}`);
             $asr.ws.onopen = function () {
@@ -69,7 +69,7 @@ layui.define(['assert'], function (exports) {
             }
         },
         asr: function (blob, callback) {
-            layui.assert.limit();
+            layui.assert.limit('asr');
             const loading = layui.layer.load(2);
             const fileReader = new FileReader();
             fileReader.onload = function (e) {
