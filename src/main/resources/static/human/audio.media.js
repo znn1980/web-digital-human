@@ -111,7 +111,7 @@ const AudioRecorder = function (audioOptions) {
             const data = event.inputBuffer.getChannelData(0);
             this.buffer.push(new Float32Array(data));
             this.size += data.length;
-            this.duration += 4096 / this.audioOptions.sampleRate;
+            this.duration += data.length / this.audioContext.sampleRate;
             this.vol = Math.max.apply(Math, data) * 100;
             const params = {
                 data: data,
