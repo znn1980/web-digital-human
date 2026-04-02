@@ -34,7 +34,7 @@ spring:
       chat:
         options:
           model: deepseek-v3.2
-          enable_search: true
+          enable-search: true
           enable-thinking: false
       embedding:
         options:

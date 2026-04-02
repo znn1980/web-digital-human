@@ -49,7 +49,6 @@ public class ChatConfig {
         //注入：内存聊天记忆
         return MessageWindowChatMemory.builder()
                 .chatMemoryRepository(chatMemoryRepository)
-                .maxMessages(200)
                 .build();
     }
 
