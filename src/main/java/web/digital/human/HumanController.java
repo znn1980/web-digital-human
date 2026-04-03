@@ -52,9 +52,9 @@ public class HumanController {
     @PostMapping(value = "/chat/completions", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> chatCompletions(@RequestBody ChatRequest request) {
         if (ObjectUtils.isEmpty(request.model)) {
-            request.model = this.properties.getChat().getModels().get(0).getValue();
+            request = request.model(this.properties.getChat().getModels().get(0).getValue());
         }
-        request.stream = true;
+        request = request.stream(true);
         log.info("问：{}", request);
         return this.webClient.post()
                 .uri(this.properties.getChat().getBaseUrl() + "/chat/completions")
@@ -210,27 +210,6 @@ public class HumanController {
                 .replace("%7E", "~");
     }
 
-    public static class ChatRequest {
-        public String model;
-        public boolean stream;
-        public List<Message> messages;
-
-        @Override
-        public String toString() {
-            return String.format("{model=%s,stream=%s,messages=%s}", this.model, this.stream, this.messages);
-        }
-
-        public static class Message {
-            public String role;
-            public String content;
-
-            @Override
-            public String toString() {
-                return String.format("{role=%s,content=%s}", this.role, this.content);
-            }
-        }
-    }
-
     static class Credentials {
         @JsonProperty("access_token")
         private String accessToken;
@@ -279,6 +258,29 @@ public class HumanController {
             public String id;
             @JsonProperty("ExpireTime")
             public long expireTime;
+        }
+    }
+
+    public record ChatRequest(
+            String model,
+            boolean stream,
+            @JsonProperty("enable_search") boolean enableSearch,
+            @JsonProperty("enable_thinking") boolean enableThinking,
+            Thinking thinking,
+            List<Message> messages
+    ) {
+        public ChatRequest model(String model) {
+            return new ChatRequest(model, this.stream, this.enableSearch, this.enableThinking, this.thinking, this.messages);
+        }
+
+        public ChatRequest stream(boolean stream) {
+            return new ChatRequest(this.model, stream, this.enableSearch, this.enableThinking, this.thinking, this.messages);
+        }
+
+        public record Thinking(String type) {
+        }
+
+        public record Message(String role, String content) {
         }
     }
 }

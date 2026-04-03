@@ -36,7 +36,14 @@ layui.define(['assert'], function (exports) {
         //大模型
         model: [],
         //大模型请求
-        request: {model: '', stream: true, messages: []},
+        request: {
+            model: '',
+            messages: [],
+            stream: true,
+            enable_search: false,
+            enable_thinking: false,
+            thinking: {type: 'disabled'}
+        },
         //大模型应答
         response: {messages: []},
         //初始化画布，并加载第一个数字人形象
@@ -51,9 +58,7 @@ layui.define(['assert'], function (exports) {
         //加载数字人形象
         load: function (human, callback) {
             $human.request.messages = [{
-                role: 'system', content: `
-                你的名字叫${human.title}，是一位智能助手。
-                `
+                role: 'system', content: `你的名字叫${human.title}，是一位智能助手。`
             }];
             $human.me = human;
             $human.stop();

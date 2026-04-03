@@ -1,7 +1,5 @@
 package web.digital.human.ai;
 
-import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
-import com.alibaba.cloud.ai.dashscope.embedding.DashScopeEmbeddingModel;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.client.ChatClient;
@@ -12,7 +10,9 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.reader.ExtractedTextFormatter;
 import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.reader.markdown.MarkdownDocumentReader;
@@ -54,7 +54,7 @@ public class ChatConfig {
 
 
     @Bean
-    public ChatClient chatClient(DashScopeChatModel chatModel
+    public ChatClient chatClient(ChatModel chatModel
             , ChatMemory chatMemory, ChatTools chatTools, VectorStore vectorStore
             , SystemPromptTemplate systemPromptTemplate) {
         return ChatClient.builder(chatModel)
@@ -84,12 +84,12 @@ public class ChatConfig {
         //注入：系统提示词
         return SystemPromptTemplate.builder()
                 .resource(defaultSystem)
-                .variables(mapper.readValue(hotel.getURL(), new TypeReference<>() {
+                .variables(mapper.readValue(hotel.getInputStream(), new TypeReference<>() {
                 })).build();
     }
 
     @Bean
-    public VectorStore vectorStore(DashScopeEmbeddingModel embeddingModel) {
+    public VectorStore vectorStore(EmbeddingModel embeddingModel) {
         //注入：基于内存的向量存储
         return SimpleVectorStore.builder(embeddingModel).build();
     }

@@ -62,7 +62,7 @@ public class ChatTools {
             房间名称，类型如：标间、大床房、套房等
             """, required = false) String roomName) throws IOException {
         log.info("查询酒店的房间价格 => {}", roomName);
-        return mapper.readValue(hotel.getURL(), ChatHotel.class).rooms()
+        return mapper.readValue(hotel.getInputStream(), ChatHotel.class).rooms()
                 .stream().map(room -> room.price(String.format("￥ %.2f", asPrice(100, 500))))
                 .toList();
     }
@@ -102,7 +102,7 @@ public class ChatTools {
             @ToolParam(description = "附近多少公里", required = false) String km) throws IOException {
         log.info("查询附近的酒店信息 => {}", km);
         List<ChatHotel> chatHotels = new ArrayList<>();
-        mapper.readValue(hotels.getURL(), new TypeReference<List<ChatHotel>>() {
+        mapper.readValue(hotels.getInputStream(), new TypeReference<List<ChatHotel>>() {
         }).forEach(hotel -> {
             AtomicReference<Double> sum = new AtomicReference<>(0.0);
             List<ChatHotel.Room> rooms = new ArrayList<>();
