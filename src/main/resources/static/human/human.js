@@ -156,7 +156,28 @@ layui.define(['assert'], function (exports) {
             }
             $human.id.speak = requestAnimationFrame($human._speak);
         },
+        think: 0,
         chat: function (text, uuid) {
+            text = text
+                .replaceAll('<table>', '<table class="layui-table" lay-size="sm">')
+                .replaceAll('<think>', `
+                  <div class="layui-timeline">
+                    <div class="layui-timeline-item">
+                      <i class="layui-icon layui-timeline-axis layui-icon-component"></i>
+                      <div class="layui-timeline-content layui-text">
+                        <h6 class="layui-timeline-title">深度思考</h6>
+                `)
+                .replaceAll('</think>', `
+                      </div>
+                    </div>
+                    <div class="layui-timeline-item">
+                      <i class="layui-icon layui-timeline-axis layui-icon-component"></i>
+                      <div class="layui-timeline-content layui-text">
+                        <h6 class="layui-timeline-title">已思考（用时${($human.think / 1000).toFixed(2)}秒）</h6>
+                      </div>
+                    </div>
+                  </div>
+                `);
             if (layui.$(`#CHAT-${uuid}`).length > 0) {
                 layui.$(`#CHAT-${uuid}`).html(text);
             } else {
@@ -182,6 +203,7 @@ layui.define(['assert'], function (exports) {
             console.log($human.request);
             $human.sse.abort = new AbortController();
             const loading = layui.layer.load(2);
+            let thinking = false;
             SSE.fetchEventSource('chat/completions', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -200,21 +222,37 @@ layui.define(['assert'], function (exports) {
                         throw new Error(msg.data);
                     }
                     if (msg.data === '[DONE]') {
-                        if ($human.response.messages.join('') !== '') {
+                        if (layui.$.trim($human.response.messages.join(''))) {
                             $human.request.messages.push({
                                 role: 'assistant',
                                 content: $human.response.messages.join('')
                             });
                         }
-                        //与“onclose”重复执行
-                        //typeof callback === 'function' && callback(true, null);
                     }
                     if (msg.data.startsWith('{') && msg.data.endsWith('}')) {
                         const data = JSON.parse(msg.data);
                         if (data.choices && data.choices[0] && data.choices[0].delta) {
-                            const text = data.choices[0].delta.reasoning_content || data.choices[0].delta.content || '';
-                            $human.response.messages.push(data.choices[0].delta.content || '');
-                            typeof callback === 'function' && callback(false, text);
+                            const reasoningContent = data.choices[0].delta.reasoning_content || '';
+                            const content = data.choices[0].delta.content || '';
+                            const text = [];
+                            if (layui.$.trim(reasoningContent)) {
+                                if (thinking === false) {
+                                    thinking = true;
+                                    $human.think = Date.now();
+                                    text.push('<think>');
+                                }
+                                text.push(reasoningContent);
+                            }
+                            if (layui.$.trim(content)) {
+                                if (thinking === true) {
+                                    thinking = false;
+                                    $human.think = Date.now() - $human.think;
+                                    text.push('</think>');
+                                }
+                                text.push(content);
+                                $human.response.messages.push(content);
+                            }
+                            typeof callback === 'function' && callback(false, text.join(''));
                         }
                     }
                 },

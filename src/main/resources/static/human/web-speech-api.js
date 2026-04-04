@@ -81,9 +81,10 @@ class WebSpeech {
      * 单次语音识别监听函数
      * 启动一次性的语音识别，识别完成后自动停止并返回结果
      * @param {function(string): void} callback - 识别成功后的回调函数，参数为识别结果文本
+     * @param end
      * @returns {void}
      */
-    listen(callback) {
+    listen(callback, end) {
         // 配置为单次识别模式，识别完成后自动停止
         this.speechRecognition.continuous = false;
         // 处理语音识别结果事件
@@ -98,11 +99,13 @@ class WebSpeech {
         // 语音识别结束时关闭加载动画
         this.speechRecognition.onend = () => {
             console.log('结束语音识别...');
+            typeof end === 'function' && end();
             this.loader.close();
         }
         // 处理语音识别错误，关闭加载动画
         this.speechRecognition.onerror = (e) => {
             console.error('语音识别错误：', e.error);
+            typeof end === 'function' && end();
             this.loader.close();
         }
         // 启动语音识别服务并显示加载动画，捕获可能的异常
@@ -111,6 +114,7 @@ class WebSpeech {
             this.loader.show();
         } catch (e) {
             console.error('启动语音识别失败：', e);
+            typeof end === 'function' && end();
         }
     }
 

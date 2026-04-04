@@ -28,6 +28,33 @@
             overflow: hidden;
             position: relative;
         }
+
+        .layui-form-radio,
+        .layui-form-checkbox {
+            background-color: transparent;
+        }
+
+        .layui-form-radio > .chat-tools-skin,
+        .layui-form-checkbox > .chat-tools-skin {
+            color: #000;
+            border: 1px solid #e5e5e5;
+            border-radius: 100px;
+            display: table;
+            padding: 5px;
+        }
+
+        .layui-form-radio:hover > .chat-tools-skin,
+        .layui-form-checkbox:hover > .chat-tools-skin {
+            color: #000;
+            border: 1px solid #16b777;
+        }
+
+        .layui-form-checked > .chat-tools-skin,
+        .layui-form-radioed > .chat-tools-skin {
+            color: #fff !important;
+            border: 1px solid #16b777 !important;
+            background-color: #16b777 !important;
+        }
     </style>
 </head>
 <body>
@@ -111,20 +138,45 @@
     }).use(['layim'], function () {
 
         const webSpeech = new WebSpeech();
-        let abortController, conversationId = asUuid(), periodThinking = 0;
+        let abortController
+            , conversationId = asUuid()
+            , periodThinking = 0
+            , enableThinking = false
+            , enableSearch = false;
+
+        layui.form.on('checkbox(chat-tools-switch)', function (data) {
+            if (data.elem.name === 'enable-thinking') {
+                enableThinking = data.elem.checked;
+            }
+            if (data.elem.name === 'enable-search') {
+                enableSearch = data.elem.checked;
+            }
+            if (data.elem.name === 'mike') {
+                webSpeech.listen(function (result) {
+                    console.log('语音识别 => ', result);
+                    if (layui.$.trim(result) === '') {
+                        return layui.layer.msg('未识别到文字');
+                    }
+                    layui.layim.sendMessage(result);
+                }, function () {
+                    data.elem.checked = false;
+                });
+            }
+        });
 
         layui.layim.on('sendMessage', function (data) {
             console.log('sendMessage => ', data);
-            const user = data.user; // 当前用户的数据（即我）,包含了消息内容。
-            const receiver = data.receiver; // 当前聊天对象的数据（即 AI）
-
+            const user = data.user, receiver = data.receiver;
             if (receiver.type === 'ai') {
                 let thinking = false, content = [];
                 abortController = new AbortController();
                 SSE.fetchEventSource(`../ai/chat/completions`, {
                     method: 'POST'
                     , headers: {'Content-Type': 'application/json'}
-                    , body: JSON.stringify({uuid: conversationId, system: null, user: user.content})
+                    , body: JSON.stringify({
+                        uuid: conversationId, system: null, user: user.content
+                        , enableThinking: enableThinking, enableSearch: enableSearch
+                    })
                     , signal: abortController.signal
                     , onopen: function (response) {
                         if (!response.ok) throw new Error(`URL ${response.status} ${response.statusText}`);
@@ -189,7 +241,25 @@
         });
 
         layui.layim.on('chatInit', function (data) {
-            layui.$(data.elem).find('.layim-tool-face').remove();
+            layui.$(data.elem).find('.layim-chat-tool').empty().html(`
+                <span class="layui-form">
+                  <input ${enableThinking ? 'checked' : ''} type="checkbox"
+                   name="enable-thinking" value="深度思考" lay-skin="none" lay-filter="chat-tools-switch">
+                  <div lay-checkbox class="chat-tools-skin layui-badge">
+                    <i class="layui-icon layui-icon-component"></i>深度思考
+                  </div>
+                  <input ${enableSearch ? 'checked' : ''} type="checkbox"
+                   name="enable-search" value="联网搜索" lay-skin="none" lay-filter="chat-tools-switch">
+                  <div lay-checkbox class="chat-tools-skin layui-badge">
+                    <i class="layui-icon layui-icon-website"></i>联网搜索
+                  </div>
+                  <input type="checkbox" name="mike" lay-skin="none" lay-filter="chat-tools-switch">
+                  <div lay-checkbox class="chat-tools-skin layui-badge">
+                    <i class="layui-icon layui-icon-mike"></i>语音输入
+                  </div>
+                </span>
+            `);
+            layui.form.render();
             layui.layim.getMessage({
                 system: true
                 , id: data.data.id
@@ -218,31 +288,11 @@
                 }
             });
 
-            layui.layim.extendChatTools([
-                {
-                    name: 'mike', title: '语音输入', icon: 'layui-icon-mike'
-                    , onClick: function () {
-                        webSpeech.listen(function (result) {
-                            console.log('语音识别 => ', result);
-                            if (layui.$.trim(result) === '') {
-                                return layui.layer.msg('未识别到文字');
-                            }
-                            layui.layim.sendMessage(result);
-                        });
-                    }
-                }]);
-
             layui.util.fixbar({
                 default: false
-                , bars: [{type: 'AI', icon: 'layui-icon-bot', style: 'background-color: #FF5722;'}]
+                , bars: [{icon: 'layui-icon-bot', style: 'background-color: #FF5722;'}]
                 , on: {
-                    mouseenter: function () {
-                        layui.layer.tips(`${data.name}（AI助手）`, this, {tips: 4, fixed: true});
-                    }
-                    , mouseleave: function () {
-                        layui.layer.closeAll('tips');
-                    }
-                    , click: function () {
+                    click: function () {
                         layui.layim.chat({
                             type: 'ai'
                             , username: `${data.name}（AI助手）`

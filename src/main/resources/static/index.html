@@ -100,7 +100,7 @@
                         const blob = audioRecorder.pcm();
                         layui.asr.asr(blob, function (text) {
                             if (!text || text === '') return layui.layer.msg('我没有听清你在说些什么！');
-                            layui.$('input').val(text);
+                            layui.$('.layui-input').val(text);
                             layui.$('.layui-icon-release').trigger('click');
                         });
                     }
@@ -116,21 +116,21 @@
         });
 
         layui.$('.layui-icon-release').on('click', function () {
-            if (layui.$('input').val() === '') return layui.$('input').focus();
+            if (layui.$('.layui-input').val() === '') return layui.$('.layui-input').focus();
             if (audioPlayer.isPlaying) return layui.layer.msg('正在播放，请先暂停！');
-            layui.human.chat(layui.$('input').val());
+            layui.human.chat(layui.$('.layui-input').val());
             layui.tts.open(function (buffer) {
                 if (buffer) return audioPlayer.onPush(buffer);
                 const messages = [], uuid = Date.now() + 1000;
-                layui.human.send(layui.$('input').val(), function (done, text) {
+                layui.human.send(layui.$('.layui-input').val(), function (done, text) {
                     if (done) layui.tts.stop();
-                    if (text && text !== '') {
+                    if (layui.$.trim(text)) {
                         messages.push(text)
                         layui.tts.send(text);
                         layui.human.chat(marked.parse(messages.join('')), uuid);
                     }
                 });
-                layui.$('input').val('');
+                layui.$('.layui-input').val('');
             });
         });
 
@@ -140,16 +140,42 @@
             audioPlayer.onDone();
         });
 
-        layui.$('input').on('keyup', function (e) {
+        layui.$('.layui-input').on('keyup', function (e) {
             if (e.keyCode === 13) layui.$('.layui-icon-release').trigger('click');
+        });
+
+        layui.form.on('checkbox(chat-tools-switch)', function (data) {
+            if (data.elem.name === 'enable-thinking') {
+                layui.human.request.enable_thinking = data.elem.checked;
+                layui.human.request.thinking.type = data.elem.checked ? 'enabled' : 'disabled';
+            }
+            if (data.elem.name === 'enable-search') {
+                layui.human.request.enable_search = data.elem.checked;
+                layui.human.request.web_search.enable = data.elem.checked;
+            }
         });
 
     });
 </script>
 <div class="container">
     <div class="header">
-        <a href="javascript:" class="layui-icon layui-icon-pause"></a>
-        <a href="javascript:" class="layui-icon layui-icon-set"></a>
+        <div class="header-left layui-form">
+            <label for="enable-thinking"></label>
+            <input type="checkbox" name="enable-thinking" lay-skin="none" lay-filter="chat-tools-switch">
+            <div lay-checkbox class="chat-tools-skin layui-badge">
+                <i class="layui-icon layui-icon-component"></i>深度思考
+            </div>
+            <label for="enable-search"></label>
+            <input type="checkbox" name="enable-search" lay-skin="none" lay-filter="chat-tools-switch">
+            <div lay-checkbox class="chat-tools-skin layui-badge">
+                <i class="layui-icon layui-icon-website"></i>联网搜索
+            </div>
+        </div>
+        <div class="header-center"></div>
+        <div class="header-right">
+            <a href="javascript:" class="layui-icon layui-icon-pause" style="font-size: 30px;color: black;"></a>
+            <a href="javascript:" class="layui-icon layui-icon-set" style="font-size: 30px;color: black;"></a>
+        </div>
     </div>
     <div class="main">
         <div class="human">
@@ -161,13 +187,13 @@
     </div>
     <div class="footer">
         <div class="footer-left">
-            <a href="javascript:" class="layui-icon layui-icon-mike"></a>
+            <a href="javascript:" class="layui-icon layui-icon-mike" style="font-size: 30px;color: black;"></a>
         </div>
         <div class="footer-center">
             <label><input type="text" class="layui-input" placeholder="你可以问我任何问题..."></label>
         </div>
         <div class="footer-right">
-            <a href="javascript:" class="layui-icon layui-icon-release"></a>
+            <a href="javascript:" class="layui-icon layui-icon-release" style="font-size: 30px;color: black;"></a>
         </div>
     </div>
 </div>
