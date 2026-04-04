@@ -38,11 +38,12 @@ layui.define(['assert'], function (exports) {
         //大模型请求
         request: {
             model: '',
-            messages: [],
             stream: true,
-            enable_search: false,
+            messages: [],
             enable_thinking: false,
-            thinking: {type: 'disabled'}
+            thinking: {type: 'disabled'},
+            enable_search: false,
+            web_search: {enable: false}
         },
         //大模型应答
         response: {messages: []},

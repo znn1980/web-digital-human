@@ -22,10 +22,12 @@ spring:
         options:
           model: deepseek-v3.2
           extra-body:
-            enable_search: false
             enable_thinking: false
             thinking:
               type: disabled
+            enable_search: false
+            web_search:
+              enable: false
       embedding:
         embeddings-path: /v1/embeddings
         options:

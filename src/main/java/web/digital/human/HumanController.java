@@ -5,6 +5,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.ObjectUtils;
@@ -58,7 +59,7 @@ public class HumanController {
         log.info("问：{}", request);
         return this.webClient.post()
                 .uri(this.properties.getChat().getBaseUrl() + "/chat/completions")
-                .header("Authorization", String.format("Bearer %s", this.properties.getChat().getApiKey()))
+                .header(HttpHeaders.AUTHORIZATION, String.format("Bearer %s", this.properties.getChat().getApiKey()))
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request).retrieve().bodyToFlux(String.class)
@@ -97,7 +98,7 @@ public class HumanController {
                                 .uri("https://nls-gateway-cn-shanghai.aliyuncs.com/stream/v1/asr?appkey={0}&format=pcm&sample_rate=16000"
                                         , appKey)
                                 .header("X-NLS-Token", token.getId())
-                                .header("Host", "nls-gateway-cn-shanghai.aliyuncs.com")
+                                .header(HttpHeaders.HOST, "nls-gateway-cn-shanghai.aliyuncs.com")
                                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                                 .bodyValue(bytes).retrieve().bodyToMono(String.class)))
                 .doOnNext(s -> log.info("【阿里云】语音识别：{}", s))
@@ -264,23 +265,28 @@ public class HumanController {
     public record ChatRequest(
             String model,
             boolean stream,
-            @JsonProperty("enable_search") boolean enableSearch,
+            List<Message> messages,
             @JsonProperty("enable_thinking") boolean enableThinking,
             Thinking thinking,
-            List<Message> messages
+            @JsonProperty("enable_search") boolean enableSearch,
+            @JsonProperty("web_search") WebSearch webSearch
+
     ) {
         public ChatRequest model(String model) {
-            return new ChatRequest(model, this.stream, this.enableSearch, this.enableThinking, this.thinking, this.messages);
+            return new ChatRequest(model, this.stream, this.messages, this.enableThinking, this.thinking, this.enableSearch, this.webSearch);
         }
 
         public ChatRequest stream(boolean stream) {
-            return new ChatRequest(this.model, stream, this.enableSearch, this.enableThinking, this.thinking, this.messages);
+            return new ChatRequest(this.model, stream, this.messages, this.enableThinking, this.thinking, this.enableSearch, this.webSearch);
+        }
+
+        public record Message(String role, String content) {
         }
 
         public record Thinking(String type) {
         }
 
-        public record Message(String role, String content) {
+        public record WebSearch(boolean enable) {
         }
     }
 }
