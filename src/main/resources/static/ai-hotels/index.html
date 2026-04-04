@@ -188,23 +188,17 @@
                 `);
         });
 
-        layui.layim.on('chatInit', function (obj) {
-            const data = obj.data, elem = obj.elem;
-            if (data.type === 'ai') {
-                const lastItem = elem.find('.layim-chat-main>ul>li').last();
-                const existMessages = layui.layim.chat.messages && layui.layim.chat.messages[data.id];
-                if (!existMessages && !lastItem.hasClass('layim-chat-system')) {
-                    layui.layim.getMessage({
-                        system: true
-                        , id: data.id
-                        , type: 'ai'
-                        , content: '以下为新的对话'
-                        , saveLocalChatlog: false
-                    });
-                }
-                layui.$.ajax({url: `../ai/chat/${conversationId}`, type: 'DELETE'});
-                conversationId = asUuid();
-            }
+        layui.layim.on('chatInit', function (data) {
+            layui.$(data.elem).find('.layim-tool-face').remove();
+            layui.layim.getMessage({
+                system: true
+                , id: data.data.id
+                , type: data.data.type
+                , content: '以下为新的对话'
+                , saveLocalChatlog: false
+            });
+            layui.$.ajax({url: `../ai/chat/${conversationId}`, type: 'DELETE'});
+            conversationId = asUuid();
         });
 
         layui.$.get('hotel.json').done(function (data) {
@@ -257,7 +251,7 @@
                             , new: true
                             , enableLocalChatlog: false
                             , layer: {
-                                cancel: function () {
+                                end: function () {
                                     if (abortController) abortController.abort();
                                     webSpeech.cancel();
                                     layui.$.ajax({url: `../ai/chat/${conversationId}`, type: 'DELETE'});
