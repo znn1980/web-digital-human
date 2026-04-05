@@ -6,8 +6,10 @@ class WebSpeech {
      * @returns {void}
      */
     constructor(lang) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return alert('当前浏览器不支持语音识别');
         // 创建浏览器语音识别实例，兼容 Chrome 的 webkit 前缀版本
-        this.speechRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        this.speechRecognition = new SpeechRecognition();
         // 配置为不返回中间结果，仅在识别完成后返回最终结果
         this.speechRecognition.interimResults = false;
         // 设置语音识别的语言类型

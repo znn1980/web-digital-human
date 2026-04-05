@@ -191,7 +191,8 @@ public class HumanController {
             String value = String.format("GET&%s&%s", urlEncoder("/"), urlEncoder(sign.toString()));
             this.add("Signature", Base64.encodeBase64String(new HmacUtils("HmacSHA1", key).hmac(value)));
         }}).flatMap(params -> this.webClient.get()
-                .uri("https://nls-meta.cn-shanghai.aliyuncs.com", uriBuilder -> uriBuilder.queryParams(params).build())
+                .uri("https://nls-meta.cn-shanghai.aliyuncs.com", uriBuilder ->
+                        uriBuilder.queryParams(params).build())
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve().bodyToMono(Token.class).map(token -> {
                     this.token.setId(token.getId());
@@ -273,11 +274,17 @@ public class HumanController {
 
     ) {
         public ChatRequest model(String model) {
-            return new ChatRequest(model, this.stream, this.messages, this.enableThinking, this.thinking, this.enableSearch, this.webSearch);
+            return new ChatRequest(
+                    model, this.stream, this.messages,
+                    this.enableThinking, this.thinking,
+                    this.enableSearch, this.webSearch);
         }
 
         public ChatRequest stream(boolean stream) {
-            return new ChatRequest(this.model, stream, this.messages, this.enableThinking, this.thinking, this.enableSearch, this.webSearch);
+            return new ChatRequest(
+                    this.model, stream, this.messages,
+                    this.enableThinking, this.thinking,
+                    this.enableSearch, this.webSearch);
         }
 
         public record Message(String role, String content) {

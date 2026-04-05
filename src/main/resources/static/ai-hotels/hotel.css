@@ -1,0 +1,45 @@
+body,
+html,
+#all-map {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+    position: absolute;
+}
+
+#all-hotels {
+    width: 262px;
+    top: 10px;
+    left: 10px;
+    z-index: 999990;
+    overflow: hidden;
+    position: relative;
+}
+
+.layui-form-radio,
+.layui-form-checkbox {
+    background-color: transparent;
+}
+
+.layui-form-radio > .chat-tools-skin,
+.layui-form-checkbox > .chat-tools-skin {
+    color: #000;
+    border: 1px solid #e5e5e5;
+    border-radius: 100px;
+    display: table;
+    padding: 5px;
+}
+
+.layui-form-radio:hover > .chat-tools-skin,
+.layui-form-checkbox:hover > .chat-tools-skin {
+    color: #000;
+    border: 1px solid #16b777;
+}
+
+.layui-form-checked > .chat-tools-skin,
+.layui-form-radioed > .chat-tools-skin {
+    color: #fff !important;
+    border: 1px solid #16b777 !important;
+    background-color: #16b777 !important;
+}

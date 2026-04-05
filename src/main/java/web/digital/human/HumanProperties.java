@@ -48,7 +48,6 @@ public class HumanProperties {
         }
     }
 
-
     public static class Aliyun {
         private String accessKeyId;
         private String accessKeySecret;

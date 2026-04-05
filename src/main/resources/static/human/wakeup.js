@@ -1,5 +1,5 @@
 layui.define(function (exports) {
-
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const $wakeup = {
         lang: 'zh-CN',
         voices: [],
@@ -11,7 +11,8 @@ layui.define(function (exports) {
         reg: /[。！？：；.!?:;\n]/,
         speaks: [],
         listen: function (keywords, timeout, callback) {
-            $wakeup.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            if (!SpeechRecognition) return layui.layer.msg('当前浏览器不支持语音识别');
+            $wakeup.recognition = new SpeechRecognition();
             $wakeup.recognition.continuous = true;
             $wakeup.recognition.interimResults = false;
             $wakeup.recognition.maxAlternatives = 1;

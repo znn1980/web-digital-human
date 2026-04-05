@@ -145,11 +145,11 @@
         });
 
         layui.form.on('checkbox(chat-tools-switch)', function (data) {
-            if (data.elem.name === 'enable-thinking') {
+            if (data.elem.id === 'enable-thinking') {
                 layui.human.request.enable_thinking = data.elem.checked;
                 layui.human.request.thinking.type = data.elem.checked ? 'enabled' : 'disabled';
             }
-            if (data.elem.name === 'enable-search') {
+            if (data.elem.id === 'enable-search') {
                 layui.human.request.enable_search = data.elem.checked;
                 layui.human.request.web_search.enable = data.elem.checked;
             }
@@ -161,12 +161,12 @@
     <div class="header">
         <div class="header-left layui-form">
             <label for="enable-thinking"></label>
-            <input type="checkbox" name="enable-thinking" lay-skin="none" lay-filter="chat-tools-switch">
+            <input type="checkbox" id="enable-thinking" lay-skin="none" lay-filter="chat-tools-switch">
             <div lay-checkbox class="chat-tools-skin layui-badge">
                 <i class="layui-icon layui-icon-component"></i>深度思考
             </div>
             <label for="enable-search"></label>
-            <input type="checkbox" name="enable-search" lay-skin="none" lay-filter="chat-tools-switch">
+            <input type="checkbox" id="enable-search" lay-skin="none" lay-filter="chat-tools-switch">
             <div lay-checkbox class="chat-tools-skin layui-badge">
                 <i class="layui-icon layui-icon-website"></i>联网搜索
             </div>

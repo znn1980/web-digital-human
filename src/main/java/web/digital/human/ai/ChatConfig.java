@@ -79,11 +79,11 @@ public class ChatConfig {
 
     @Bean
     public SystemPromptTemplate systemPromptTemplate(ObjectMapper mapper
-            , @Value("classpath:/static/ai-hotels/default-system.md") Resource defaultSystem
+            , @Value("classpath:/static/ai-hotels/system-prompt.md") Resource systemPrompt
             , @Value("classpath:/static/ai-hotels/hotel.json") Resource hotel) throws IOException {
         //注入：系统提示词
         return SystemPromptTemplate.builder()
-                .resource(defaultSystem)
+                .resource(systemPrompt)
                 .variables(mapper.readValue(hotel.getInputStream(), new TypeReference<>() {
                 })).build();
     }
