@@ -65,6 +65,10 @@
             }
         });
 
+        layui.table.on('row(all-hotels-table)', function (data) {
+            openInfoWindow(data.data);
+        });
+
         layui.layim.on('chatInit', function (data) {
             layui.$(data.elem).find('.layim-chat-tool').empty().html(`
                 <span class="layui-form">
@@ -103,13 +107,12 @@
                 let thinking = false, content = [];
                 abortController = new AbortController();
                 SSE.fetchEventSource(`../ai/chat/completions`, {
-                    method: 'POST'
+                    method: 'POST', signal: abortController.signal
                     , headers: {'Content-Type': 'application/json'}
                     , body: JSON.stringify({
-                        uuid: conversationId, system: null, user: user.content
+                        conversationId: conversationId, question: user.content
                         , enableThinking: enableThinking, enableSearch: enableSearch
                     })
-                    , signal: abortController.signal
                     , onopen: function (response) {
                         if (!response.ok) throw new Error(`URL ${response.status} ${response.statusText}`);
                     }
@@ -173,9 +176,7 @@
         });
 
         layui.$.get('hotel.json').done(function (data) {
-            allMap.centerAndZoom(new BMapGL.Point(data.point.lng, data.point.lat), 11);
-            allMap.enableScrollWheelZoom();
-            addMarker(data);
+            centerAndZoom(data, 11);
 
             document.title = `${data.name}`;
             layui.layim.config({
@@ -191,35 +192,51 @@
 
             layui.util.fixbar({
                 default: false
-                , bars: [{icon: 'layui-icon-bot', style: 'background-color: #FF5722;'}]
+                , bars: [
+                    {type: 'chat', icon: 'layui-icon-bot'}
+                    , {type: 'home', icon: 'layui-icon-home'}
+                ]
                 , on: {
-                    click: function () {
-                        layui.layim.chat({
-                            type: 'ai'
-                            , id: `ai-${data.name}`
-                            , username: `${data.name}（AI助手）`
-                            , avatar: 'robot.png'
-                            , new: true
-                            , enableLocalChatlog: false
-                            , layer: {
-                                end: function () {
-                                    if (abortController) abortController.abort();
-                                    webSpeech.cancel();
-                                    layui.$.ajax({url: `../ai/chat/${conversationId}`, type: 'DELETE'});
+                    click: function (type) {
+                        if (type === 'chat') {
+                            layui.layim.chat({
+                                type: 'ai'
+                                , id: `ai-${data.name}`
+                                , username: `${data.name}（AI助手）`
+                                , avatar: 'robot.png'
+                                , new: true
+                                , enableLocalChatlog: false
+                                , layer: {
+                                    end: function () {
+                                        if (abortController) abortController.abort();
+                                        webSpeech.cancel();
+                                        layui.$.ajax({url: `../ai/chat/${conversationId}`, type: 'DELETE'});
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
+                        if (type === 'home') {
+                            layui.$.get('hotels.json').done(function (data) {
+                                addHotels(data, function (hotels, points) {
+                                    setViewport(points);
+                                    layui.table.reload('all-hotels-table', {data: hotels});
+                                });
+                            });
+                        }
                     }
                 }
             });
 
             layui.$.get('hotels.json').done(function (data) {
-                addHotels(data);
-                layui.table.reload('all-hotels-table', {data: data});
-                setInterval(function () {
-                    addHotels(data);
-                    layui.table.reload('all-hotels-table', {data: data});
-                }, 1000 * 30);
+                addHotels(data, function (hotels, points) {
+                    setViewport(points);
+                    layui.table.reload('all-hotels-table', {data: hotels});
+                    setInterval(function () {
+                        addHotels(data, function (hotels) {
+                            layui.table.reload('all-hotels-table', {data: hotels});
+                        });
+                    }, 1000 * 30);
+                });
             });
         });
 

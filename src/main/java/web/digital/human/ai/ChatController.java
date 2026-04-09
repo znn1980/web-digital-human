@@ -30,7 +30,7 @@ public class ChatController {
     public Flux<ChatResponse> chatCompletions(@RequestBody ChatRequest chatRequest) {
         log.info("CHAT-COMPLETIONS => {}", chatRequest);
         return this.chatClient.prompt()
-                .user(chatRequest.user())
+                .user(chatRequest.question())
                 .options(OpenAiChatOptions.builder()
                         .extraBody(Map.of(
                                 "enable_thinking", chatRequest.enableThinking(),
@@ -38,7 +38,7 @@ public class ChatController {
                                 "enable_search", chatRequest.enableSearch(),
                                 "web_search", Map.of("enable", chatRequest.enableSearch())
                         )).build())
-                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatRequest.uuid()))
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatRequest.conversationId()))
                 .stream().chatResponse();
     }
 

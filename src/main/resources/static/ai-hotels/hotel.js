@@ -1,6 +1,15 @@
 const allMap = new BMapGL.Map("all-map");
 
-function addHotels(hotels) {
+function centerAndZoom(data, zoom) {
+    allMap.centerAndZoom(new BMapGL.Point(data.point.lng, data.point.lat), zoom || 11);
+    allMap.enableScrollWheelZoom();
+}
+
+function setViewport(points) {
+    allMap.setViewport(points);
+}
+
+function addHotels(hotels, callback) {
     const points = [];
     allMap.clearOverlays();
     hotels.forEach(function (data) {
@@ -12,11 +21,12 @@ function addHotels(hotels) {
         data.price = `￥${(sum / data.rooms.length).toFixed(2)}`;
         points.push(addMarker(data).getPosition());
     });
-    allMap.setViewport(points);
+    typeof callback === 'function' && callback(hotels, points);
 }
 
 function addMarker(data) {
-    const marker = new BMapGL.Marker(new BMapGL.Point(data.point.lng, data.point.lat), {title: data.address});
+    const point = new BMapGL.Point(data.point.lng, data.point.lat);
+    const marker = new BMapGL.Marker(point, {title: data.address});
     marker.setIcon(new BMapGL.Icon("hotel.png", new BMapGL.Size(32, 32)));
     marker.setLabel(new BMapGL.Label(`${data.name}（参考价: ${data.price}）`, {offset: new BMapGL.Size(20, -10)}));
     marker.addEventListener("mouseover", function () {
@@ -26,19 +36,24 @@ function addMarker(data) {
         marker.setTop(false);
     });
     marker.addEventListener("click", function () {
-        const msg = [];
-        msg.push(`类型：${data.type}<br>地址：${data.address}`);
-        msg.push(`<table class="layui-table" lay-size="sm">`);
-        msg.push(`<thead><tr><th>房型</th><th>价格</th></tr></thead><tbody>`);
-        data.rooms.forEach(function (room) {
-            msg.push(`<tr><td>${room.name}</td><td>${room.price}</td></tr>`);
-        });
-        msg.push(`</tbody></table>`);
-        allMap.openInfoWindow(new BMapGL.InfoWindow(msg.join(''), {title: `${data.name}（参考价: ${data.price}）`})
-            , new BMapGL.Point(data.point.lng, data.point.lat));
+        openInfoWindow(data);
     });
     allMap.addOverlay(marker);
     return marker;
+}
+
+function openInfoWindow(data) {
+    const msg = [];
+    msg.push(`类型：${data.type}<br>地址：${data.address}`);
+    msg.push(`<table class="layui-table" lay-size="sm">`);
+    msg.push(`<thead><tr><th>房型</th><th>价格</th></tr></thead><tbody>`);
+    data.rooms.forEach(function (room) {
+        msg.push(`<tr><td>${room.name}</td><td>${room.price}</td></tr>`);
+    });
+    msg.push(`</tbody></table>`);
+    allMap.panTo(data.point);
+    allMap.openInfoWindow(new BMapGL.InfoWindow(msg.join(''), {title: `${data.name}（参考价: ${data.price}）`})
+        , new BMapGL.Point(data.point.lng, data.point.lat));
 }
 
 function asPrice(min, max) {
