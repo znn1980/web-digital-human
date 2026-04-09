@@ -24,8 +24,9 @@ html,
 
 .layui-form-radio > .chat-tools-skin,
 .layui-form-checkbox > .chat-tools-skin {
-    color: #000;
-    border: 1px solid #e5e5e5;
+    color: black;
+    border: 1px solid rgba(199, 199, 199, .3);
+    background-color: white;
     border-radius: 100px;
     display: table;
     padding: 5px;
@@ -33,13 +34,11 @@ html,
 
 .layui-form-radio:hover > .chat-tools-skin,
 .layui-form-checkbox:hover > .chat-tools-skin {
-    color: #000;
-    border: 1px solid #16b777;
 }
 
 .layui-form-checked > .chat-tools-skin,
 .layui-form-radioed > .chat-tools-skin {
-    color: #fff !important;
+    color: white !important;
     border: 1px solid #16b777 !important;
     background-color: #16b777 !important;
 }

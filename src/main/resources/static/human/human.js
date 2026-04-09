@@ -182,15 +182,15 @@ layui.define(['assert'], function (exports) {
                 layui.$(`#CHAT-${uuid}`).html(text);
             } else {
                 const ymd = layui.util.toDateString(Date.now(), 'yyyy-MM-dd HH:mm:ss');
-                layui.$('.layim-chat-main').children().append([
-                    '<li class="' + (uuid ? '' : 'layim-chat-role-user') + '">',
-                    ' <div class="layim-chat-userinfo">',
-                    '  <img src="' + (uuid ? `${$human.me.value}/me.png` : 'logo.png') + '" alt="">',
-                    '  <cite>' + (uuid ? `${$human.me.title}<i>${ymd}</i>` : `<i>${ymd}</i>我`) + '</cite>',
-                    ' </div>',
-                    ' <div id="CHAT-' + (uuid || Date.now()) + '" class="layim-chat-text layui-text">' + text + '</div>',
-                    '</li>'
-                ].join(''));
+                layui.$('.layim-chat-main').children().append(`
+                      <li class="${uuid ? '' : 'layim-chat-role-user'}">
+                        <div class="layim-chat-userinfo">
+                          <img src="${uuid ? `${$human.me.value}/me.png` : 'logo.png'}" alt="">
+                          <cite>${uuid ? `${$human.me.title}<i>${ymd}</i>` : `<i>${ymd}</i>我`}</cite>
+                        </div>
+                        <div id="CHAT-${uuid || Date.now()}" class="layim-chat-text layui-text">${text}</div>
+                      </li>
+                `);
             }
             const dom = document.querySelector('.layim-chat-main');
             dom.scrollTop = dom.scrollHeight;
@@ -202,13 +202,12 @@ layui.define(['assert'], function (exports) {
             $human.request.messages.push({role: 'user', content: text});
             console.log($human.request);
             $human.sse.abort = new AbortController();
-            const loading = layui.layer.load(2);
             let thinking = false;
+            const loading = layui.layer.load(2);
             SSE.fetchEventSource('chat/completions', {
-                method: 'POST',
+                method: 'POST', signal: $human.sse.abort.signal,
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify($human.request),
-                signal: $human.sse.abort.signal,
                 onopen: function (response) {
                     layui.layer.close(loading);
                     console.log(response);
@@ -218,9 +217,6 @@ layui.define(['assert'], function (exports) {
                 },
                 onmessage: function (msg) {
                     console.log(msg);
-                    if (msg.event === 'FatalError') {
-                        throw new Error(msg.data);
-                    }
                     if (msg.data === '[DONE]') {
                         if (layui.$.trim($human.response.messages.join(''))) {
                             $human.request.messages.push({
