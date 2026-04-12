@@ -27,7 +27,6 @@
 <script src="https://api.map.baidu.com/api?v=1.0&type=webgl&ak=vlArPed8Ipa6Im77cbpq9Flok1BSJd18"></script>
 <script src="../human/fetch.event.source.js"></script>
 <script src="../human/markdown-it.min.js"></script>
-<script src="../human/web-speech-api.js"></script>
 <script src="../layui/layui.js"></script>
 <script src="hotel.js"></script>
 <script>
@@ -38,7 +37,6 @@
         layim: layui.cache.layimPath + 'layim'
     }).use(['layim'], function () {
 
-        const webSpeech = new WebSpeech();
         let abortController
             , conversationId = asUuid()
             , periodThinking = 0
@@ -53,15 +51,39 @@
                 enableSearch = data.elem.checked;
             }
             if (data.elem.name === 'mike') {
-                webSpeech.listen(function (result) {
-                    console.log('语音识别 => ', result);
-                    if (layui.$.trim(result) === '') {
-                        return layui.layer.msg('未识别到文字');
-                    }
-                    layui.layim.sendMessage(result);
-                }, function () {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) return layui.layer.msg('当前浏览器不支持语音识别！');
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'zh-CN';
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.maxAlternatives = 1;
+                let loading;
+                recognition.onstart = function () {
+                    loading = layui.layer.load(2, {
+                        time: 0, shade: 0.1, shadeClose: true
+                        , content: `<span style="position:absolute;left:-35px;width:150px;">语音识别中...<span>`
+                        , end: function () {
+                            recognition.stop();
+                            data.elem.checked = false;
+                        }
+                    });
+                }
+                recognition.onend = function () {
+                    layui.layer.close(loading);
                     data.elem.checked = false;
-                });
+                }
+                recognition.onerror = function (event) {
+                    layui.layer.close(loading);
+                    layui.layer.msg(`语音识别错误：${event.error}`);
+                    data.elem.checked = false;
+                }
+                recognition.onresult = function (event) {
+                    const text = Array.from(event.results).map(result => result[0].transcript).join('');
+                    console.log('语音识别 => ', text);
+                    layui.$('textarea.layim-scrollbar').val(text);
+                }
+                recognition.start();
             }
         });
 

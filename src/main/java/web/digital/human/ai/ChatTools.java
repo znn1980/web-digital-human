@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @Component
 public class ChatTools {
-    private final static Logger log = LoggerFactory.getLogger(ChatTools.class);
+    private final static Logger logger = LoggerFactory.getLogger(ChatTools.class);
     @Value("classpath:/static/ai-hotels/hotel.json")
     private Resource hotel;
     @Value("classpath:/static/ai-hotels/hotels.json")
@@ -37,7 +37,7 @@ public class ChatTools {
 
     @Tool(description = "获取当前日期和时间")
     public String getCurrentDateTime() {
-        log.info("获取当前日期和时间 => {}", LocalDateTime.now());
+        logger.info("获取当前日期和时间 => {}", LocalDateTime.now());
         return LocalDateTime.now().toString();
     }
 
@@ -49,7 +49,7 @@ public class ChatTools {
     public ChatHotel.Room updateHotelRoom(
             @ToolParam(description = "房间名称，如：标间、大床房、套房等") String roomName
             , @ToolParam(description = "房间价格") String roomPrice) {
-        log.info("修改酒店的房间价格 => {} => {}", roomName, roomPrice);
+        logger.info("修改酒店的房间价格 => {} => {}", roomName, roomPrice);
         return new ChatHotel.Room(roomName, roomPrice);
     }
 
@@ -61,7 +61,7 @@ public class ChatTools {
     public List<ChatHotel.Room> queryHotelRoom(@ToolParam(description = """
             房间名称，类型如：标间、大床房、套房等
             """, required = false) String roomName) throws IOException {
-        log.info("查询酒店的房间价格 => {}", roomName);
+        logger.info("查询酒店的房间价格 => {}", roomName);
         return mapper.readValue(hotel.getInputStream(), ChatHotel.class).rooms()
                 .stream().map(room -> room.price(String.format("￥ %.2f", asPrice(100, 500))))
                 .toList();
@@ -75,7 +75,7 @@ public class ChatTools {
     public ChatHotel.CheckIN setGuestRoom(@ToolParam(description = "旅客姓名") String guestName
             , @ToolParam(description = "入住日期") String dateTime
             , @ToolParam(description = "房间名称，如：标间、大床房、套房等") String roomName) {
-        log.info("旅客预订酒店房间 => {} => {} => {}", guestName, dateTime, roomName);
+        logger.info("旅客预订酒店房间 => {} => {} => {}", guestName, dateTime, roomName);
         return new ChatHotel.CheckIN(guestName, dateTime, roomName, String.format("￥ %.2f", asPrice(100, 500)));
     }
 
@@ -86,7 +86,7 @@ public class ChatTools {
             """)
     public ChatHotel.CheckIN queryGuestRoom(@ToolParam(description = "旅客姓名") String guestName
             , @ToolParam(description = "入住日期") String dateTime) {
-        log.info("查询旅客的预订信息 => {} => {}", guestName, dateTime);
+        logger.info("查询旅客的预订信息 => {} => {}", guestName, dateTime);
         String[] rooms = {"标间", "大床房", "套房"};
         return new ChatHotel.CheckIN(guestName, dateTime
                 , rooms[new Random().nextInt(rooms.length)], String.format("￥ %.2f", asPrice(100, 500)));
@@ -100,7 +100,7 @@ public class ChatTools {
             """)
     public List<ChatHotel> queryHotel(
             @ToolParam(description = "附近多少公里", required = false) String km) throws IOException {
-        log.info("查询附近的酒店信息 => {}", km);
+        logger.info("查询附近的酒店信息 => {}", km);
         List<ChatHotel> chatHotels = new ArrayList<>();
         mapper.readValue(hotels.getInputStream(), new TypeReference<List<ChatHotel>>() {
         }).forEach(hotel -> {

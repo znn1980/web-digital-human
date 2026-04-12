@@ -1,5 +1,5 @@
 layui.define(['assert'], function (exports) {
-    const $tts = {
+    exports('tts', {
         ws: null,
         task_id: null,
         app_key: '',
@@ -11,28 +11,28 @@ layui.define(['assert'], function (exports) {
         open: function (callback) {
             layui.assert.limit('tts');
             const loading = layui.layer.load(2);
-            layui.$.get('aliyun/credentials', function (data) {
+            layui.$.get('aliyun/credentials', (data) => {
                 console.log(data);
-                $tts.ws = new WebSocket(`wss://nls-gateway-cn-beijing.aliyuncs.com/ws/v1?token=${data}`);
-                $tts.ws.binaryType = "arraybuffer";
-                $tts.ws.onopen = function () {
+                this.ws = new WebSocket(`wss://nls-gateway-cn-beijing.aliyuncs.com/ws/v1?token=${data}`);
+                this.ws.binaryType = "arraybuffer";
+                this.ws.onopen = () => {
                     layui.layer.close(loading);
-                    if ($tts.ws.readyState === WebSocket.OPEN) {
-                        $tts.task_id = $tts.uuid();
-                        $tts.start();
+                    if (this.ws.readyState === WebSocket.OPEN) {
+                        this.task_id = this.uuid();
+                        this.start();
                     }
                 };
-                $tts.ws.onclose = function () {
+                this.ws.onclose = () => {
                     layui.layer.close(loading);
                     console.log('WebSocket关闭！！！');
-                    $tts.ws = null;
+                    this.ws = null;
                 };
-                $tts.ws.onerror = function () {
+                this.ws.onerror = () => {
                     layui.layer.close(loading);
                     layui.layer.msg('语音合成失败！！！（WebSocket）');
-                    $tts.ws = null;
+                    this.ws = null;
                 };
-                $tts.ws.onmessage = function (e) {
+                this.ws.onmessage = (e) => {
                     console.log(e.data);
                     if (e.data instanceof ArrayBuffer) {
                         typeof callback === 'function' && callback(e.data);
@@ -42,23 +42,23 @@ layui.define(['assert'], function (exports) {
                             typeof callback === 'function' && callback(null);
                         }
                         if (data.header.name === 'SynthesisCompleted' && data.header.status === 20000000) {
-                            $tts.ws.close();
+                            this.ws.close();
                         }
                         if (data.header.status !== 20000000) {
-                            $tts.ws.close();
+                            this.ws.close();
                             console.log('语音合成失败:', data);
                             //layui.layer.msg(`语音合成失败！（${data.header.status}:${data.header.status_text}）`);
                         }
                     }
                 };
-            }).fail(function (xhr, status, error) {
+            }).fail((xhr, status, error) => {
                 layui.layer.close(loading);
                 layui.layer.msg(`语音合成请求异常，请重试！（${error || status}）`);
             });
         },
         close: function () {
-            if ($tts.ws) {
-                $tts.ws.close();
+            if (this.ws) {
+                this.ws.close();
             }
         },
         uuid: function () {
@@ -78,11 +78,11 @@ layui.define(['assert'], function (exports) {
         },
         header: function (name) {
             return {
-                message_id: $tts.uuid(),
-                task_id: $tts.task_id,
+                message_id: this.uuid(),
+                task_id: this.task_id,
                 namespace: 'FlowingSpeechSynthesizer',
                 name: name,
-                appkey: $tts.app_key
+                appkey: this.app_key
             };
         },
         //voice【发音人，默认是xiaoyun。】
@@ -93,23 +93,22 @@ layui.define(['assert'], function (exports) {
         //pitch_rate【语调，取值范围：-500～500，默认值：0。】
         payload: {format: 'PCM', sample_rate: 16000, volume: 100, speech_rate: 0, pitch_rate: 0},
         start: function () {
-            if ($tts.ws) {
-                $tts.ws.send(JSON.stringify({
-                    header: $tts.header('StartSynthesis'),
-                    payload: {...$tts.payload, voice: $tts.voice}
+            if (this.ws) {
+                this.ws.send(JSON.stringify({
+                    header: this.header('StartSynthesis'),
+                    payload: {...this.payload, voice: this.voice}
                 }));
             }
         },
         stop: function () {
-            if ($tts.ws) {
-                $tts.ws.send(JSON.stringify({header: $tts.header('StopSynthesis')}));
+            if (this.ws) {
+                this.ws.send(JSON.stringify({header: this.header('StopSynthesis')}));
             }
         },
         send: function (text) {
-            if ($tts.ws) {
-                $tts.ws.send(JSON.stringify({header: $tts.header('RunSynthesis'), payload: {text: text}}));
+            if (this.ws) {
+                this.ws.send(JSON.stringify({header: this.header('RunSynthesis'), payload: {text: text}}));
             }
         }
-    };
-    exports('tts', $tts);
+    });
 });

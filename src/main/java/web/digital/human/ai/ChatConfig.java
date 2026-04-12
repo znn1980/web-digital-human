@@ -64,11 +64,11 @@ public class ChatConfig {
                 .defaultSystem(systemPromptTemplate.render())
                 .defaultAdvisors(
                         //日志
-                        SimpleLoggerAdvisor.builder().build()
+                        SimpleLoggerAdvisor.builder().build(),
                         //聊天记忆
-                        , MessageChatMemoryAdvisor.builder(chatMemory).build()
+                        MessageChatMemoryAdvisor.builder(chatMemory).build(),
                         //知识库
-                        , QuestionAnswerAdvisor.builder(vectorStore)
+                        QuestionAnswerAdvisor.builder(vectorStore)
                                 .searchRequest(SearchRequest.builder()
                                         .similarityThreshold(0.7)
                                         .topK(4)

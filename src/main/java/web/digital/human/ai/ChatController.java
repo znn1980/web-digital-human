@@ -17,7 +17,7 @@ import java.util.Map;
  */
 @RestController
 public class ChatController {
-    private final static Logger log = LoggerFactory.getLogger(ChatController.class);
+    private final static Logger logger = LoggerFactory.getLogger(ChatController.class);
     private final ChatClient chatClient;
     private final ChatMemory chatMemory;
 
@@ -28,7 +28,7 @@ public class ChatController {
 
     @PostMapping(value = "/ai/chat/completions", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ChatResponse> chatCompletions(@RequestBody ChatRequest chatRequest) {
-        log.info("CHAT-COMPLETIONS => {}", chatRequest);
+        logger.info("CHAT-COMPLETIONS => {}", chatRequest);
         return this.chatClient.prompt()
                 .user(chatRequest.question())
                 .options(OpenAiChatOptions.builder()
@@ -44,7 +44,7 @@ public class ChatController {
 
     @DeleteMapping("/ai/chat/{conversationId}")
     public void clearHistory(@PathVariable String conversationId) {
-        log.info("CLEAR-HISTORY => {}", conversationId);
+        logger.info("CLEAR-HISTORY => {}", conversationId);
         this.chatMemory.clear(conversationId);
     }
 }

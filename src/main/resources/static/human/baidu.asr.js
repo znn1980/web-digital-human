@@ -1,28 +1,28 @@
 layui.define(['assert'], function (exports) {
-    const $asr = {
+    exports('asr', {
         ws: null,
         app_id: '',
         app_key: '',
         open: function (callback) {
             layui.assert.limit('asr');
             const loading = layui.layer.load(2);
-            $asr.ws = new WebSocket(`wss://vop.baidu.com/realtime_asr?sn=${Date.now()}`);
-            $asr.ws.onopen = function () {
+            this.ws = new WebSocket(`wss://vop.baidu.com/realtime_asr?sn=${Date.now()}`);
+            this.ws.onopen = () => {
                 layui.layer.close(loading);
-                $asr.start();
+                this.start();
                 typeof callback === 'function' && callback(null, null);
             };
-            $asr.ws.onclose = function () {
+            this.ws.onclose = () => {
                 layui.layer.close(loading);
                 console.log('WebSocket关闭！！');
-                $asr.ws = null;
+                this.ws = null;
             };
-            $asr.ws.onerror = function () {
+            this.ws.onerror = () => {
                 layui.layer.close(loading);
                 layui.layer.msg('语音识别失败！！（WebSocket）');
-                $asr.ws = null;
+                this.ws = null;
             };
-            $asr.ws.onmessage = function (e) {
+            this.ws.onmessage = (e) => {
                 console.log(e.data);
                 const data = JSON.parse(e.data);
                 if (data.type === 'MID_TEXT' && data.err_no === 0) {
@@ -32,24 +32,24 @@ layui.define(['assert'], function (exports) {
                     typeof callback === 'function' && callback(true, data.result);
                 }
                 if (data.err_no !== 0) {
-                    $asr.ws.close()
+                    this.ws.close()
                     console.log('语音识别失败:', data);
                     //layui.layer.msg(`语音识别失败！（${data.err_no}:${data.err_msg}）`);
                 }
             };
         },
         close: function () {
-            if ($asr.ws) {
-                $asr.ws.close();
+            if (this.ws) {
+                this.ws.close();
             }
         },
         start: function () {
-            if ($asr.ws) {
-                $asr.ws.send(JSON.stringify({
+            if (this.ws) {
+                this.ws.send(JSON.stringify({
                     type: 'START',
                     data: {
-                        appid: $asr.app_id,
-                        appkey: $asr.app_key,
+                        appid: this.app_id,
+                        appkey: this.app_key,
                         dev_pid: 15372,
                         cuid: 'SC1234567890',
                         format: 'pcm',
@@ -59,24 +59,24 @@ layui.define(['assert'], function (exports) {
             }
         },
         stop: function () {
-            if ($asr.ws) {
-                $asr.ws.send(JSON.stringify({type: 'CANCEL'}));
+            if (this.ws) {
+                this.ws.send(JSON.stringify({type: 'CANCEL'}));
             }
         },
         send: function (buffer) {
-            if ($asr.ws) {
-                $asr.ws.send(buffer);
+            if (this.ws) {
+                this.ws.send(buffer);
             }
         },
         asr: function (blob, callback) {
             layui.assert.limit('asr');
             const loading = layui.layer.load(2);
             const fileReader = new FileReader();
-            fileReader.onload = function (e) {
+            fileReader.onload = (e) => {
                 console.log(e.target.result);
                 layui.$.post('baidu/speech/recognitions', {
                     vop: encodeURIComponent(e.target.result.split(',')[1])
-                }, function (data) {
+                }, (data) => {
                     console.log(data);
                     if (data.err_no !== 0) {
                         layui.layer.msg(`语音识别失败！（${data.err_no}:${data.err_msg}）`);
@@ -84,17 +84,16 @@ layui.define(['assert'], function (exports) {
                         typeof callback === 'function' && callback(data.result[0]);
                     }
                     layui.layer.close(loading);
-                }).fail(function (xhr, status, error) {
+                }).fail((xhr, status, error) => {
                     layui.layer.close(loading);
                     layui.layer.msg(`语音识别请求异常，请重试！（${error || status}）`);
                 });
             };
-            fileReader.onerror = function () {
+            fileReader.onerror = () => {
                 layui.layer.close(loading);
                 layui.layer.msg(`读取录音文件失败！（${fileReader.error}）`);
             };
             fileReader.readAsDataURL(blob);
         }
-    };
-    exports('asr', $asr);
+    });
 });

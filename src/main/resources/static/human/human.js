@@ -1,5 +1,5 @@
 layui.define(['assert'], function (exports) {
-    const $human = {
+    exports('human', {
         //画布
         ctx: null,
         canvas: null,
@@ -50,47 +50,47 @@ layui.define(['assert'], function (exports) {
         //初始化画布，并加载第一个数字人形象
         init: function (human, canvas, callback) {
             console.log(human.clientWidth + 'x' + human.clientHeight);
-            $human.canvas = canvas;
-            $human.canvas.width = human.clientWidth;
-            $human.canvas.height = human.clientHeight;
-            $human.ctx = $human.canvas.getContext('2d');
-            $human.load($human.human[0], callback);
+            this.canvas = canvas;
+            this.canvas.width = human.clientWidth;
+            this.canvas.height = human.clientHeight;
+            this.ctx = this.canvas.getContext('2d');
+            this.load(this.human[0], callback);
         },
         //加载数字人形象
         load: function (human, callback) {
-            $human.request.messages = [{
+            this.request.messages = [{
                 role: 'system', content: `你的名字叫${human.title}，是一位智能助手。`
             }];
-            $human.me = human;
-            $human.stop();
+            this.me = human;
+            this.stop();
             const loading = layui.layer.load(2, {
                 time: 0, shade: 0.6, shadeClose: false,
                 content: '<span id="loading" style="font-weight:bold;color:white;' +
                     'position:absolute;left:-30px;width:150px;">加载中...<span>'
             });
             //加载数字人待机形象
-            $human.frames.standby = [];
+            this.frames.standby = [];
             for (let i = 1; i <= human.standby.frame; i++) {
                 const image = new Image();
                 image.src = `${human.value}/standby/standby (${i}).png`;
-                $human.frames.standby.push(image);
+                this.frames.standby.push(image);
             }
             //加载数字人说话形象
-            $human.frames.speak = [];
+            this.frames.speak = [];
             for (let i = 1; i <= human.speak.frame; i++) {
                 const image = new Image();
                 image.src = `${human.value}/speak/speak (${i}).png`;
-                $human.frames.speak.push(image);
+                this.frames.speak.push(image);
             }
             //加载全部图像
-            let length = 0, frames = [...$human.frames.standby, ...$human.frames.speak];
-            frames.forEach(function (value) {
-                $human.onload(value, function () {
+            let length = 0, frames = [...this.frames.standby, ...this.frames.speak];
+            frames.forEach((value) => {
+                this.onload(value, () => {
                     length++;
                     layui.$('#loading').html(`加载中...（${Math.round(length / frames.length * 100)}%）`);
                     if (length === frames.length) {
-                        $human.draw($human.frames.standby[0]);
-                        $human.standby();
+                        this.draw(this.frames.standby[0]);
+                        this.standby();
                         layui.layer.close(loading);
                         typeof callback === 'function' && callback();
                     }
@@ -113,48 +113,56 @@ layui.define(['assert'], function (exports) {
         //画一帧图像
         draw: function (image) {
             if (image && image.width > 0 && image.height > 0) {
-                $human.ctx.clearRect(0, 0, $human.canvas.width, $human.canvas.height);
-                const scale = Math.min($human.canvas.width / image.width, $human.canvas.height / image.height);
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                const scale = Math.min(this.canvas.width / image.width, this.canvas.height / image.height);
                 const width = image.width * scale;
                 const height = image.height * scale;
-                const x = ($human.canvas.width - width) / 2;
-                const y = ($human.canvas.height - height) / 2;
-                $human.ctx.drawImage(image, x, y, width, height);
+                const x = (this.canvas.width - width) / 2;
+                const y = (this.canvas.height - height) / 2;
+                this.ctx.drawImage(image, x, y, width, height);
             }
         },
         //停止待机与说话动画
         stop: function () {
-            cancelAnimationFrame($human.id.standby);
-            cancelAnimationFrame($human.id.speak);
-            $human.frame.standby = 0;
-            $human.frame.speak = 0;
+            cancelAnimationFrame(this.id.standby);
+            cancelAnimationFrame(this.id.speak);
+            this.frame.standby = 0;
+            this.frame.speak = 0;
         },
         timestamp: null,
         //待机动画
         standby: function () {
-            $human.stop();
-            $human.id.standby = requestAnimationFrame($human._standby);
+            this.stop();
+            this.id.standby = requestAnimationFrame((timestamp) => {
+                this._standby(timestamp);
+            });
         },
         _standby: function (timestamp) {
-            if (timestamp - $human.timestamp >= $human.me.standby.interval) {
-                $human.draw($human.frames.standby[$human.frame.standby]);
-                $human.frame.standby = ($human.frame.standby + 1) % $human.frames.standby.length;
-                $human.timestamp = timestamp;
+            if (timestamp - this.timestamp >= this.me.standby.interval) {
+                this.draw(this.frames.standby[this.frame.standby]);
+                this.frame.standby = (this.frame.standby + 1) % this.frames.standby.length;
+                this.timestamp = timestamp;
             }
-            $human.id.standby = requestAnimationFrame($human._standby);
+            this.id.standby = requestAnimationFrame((timestamp) => {
+                this._standby(timestamp);
+            });
         },
         //说话动画
         speak: function () {
-            $human.stop();
-            $human.id.speak = requestAnimationFrame($human._speak);
+            this.stop();
+            this.id.speak = requestAnimationFrame((timestamp) => {
+                this._speak(timestamp);
+            });
         },
         _speak: function (timestamp) {
-            if (timestamp - $human.timestamp >= $human.me.speak.interval) {
-                $human.draw($human.frames.speak[$human.frame.speak]);
-                $human.frame.speak = ($human.frame.speak + 1) % $human.frames.speak.length;
-                $human.timestamp = timestamp;
+            if (timestamp - this.timestamp >= this.me.speak.interval) {
+                this.draw(this.frames.speak[this.frame.speak]);
+                this.frame.speak = (this.frame.speak + 1) % this.frames.speak.length;
+                this.timestamp = timestamp;
             }
-            $human.id.speak = requestAnimationFrame($human._speak);
+            this.id.speak = requestAnimationFrame((timestamp) => {
+                this._speak(timestamp);
+            });
         },
         think: 0,
         chat: function (text, uuid) {
@@ -173,7 +181,7 @@ layui.define(['assert'], function (exports) {
                     <div class="layui-timeline-item">
                       <i class="layui-icon layui-timeline-axis layui-icon-component"></i>
                       <div class="layui-timeline-content layui-text">
-                        <h6 class="layui-timeline-title">已思考（用时${($human.think / 1000).toFixed(2)}秒）</h6>
+                        <h6 class="layui-timeline-title">已思考（用时${(this.think / 1000).toFixed(2)}秒）</h6>
                       </div>
                     </div>
                   </div>
@@ -185,8 +193,8 @@ layui.define(['assert'], function (exports) {
                 layui.$('.layim-chat-main').children().append(`
                       <li class="${uuid ? '' : 'layim-chat-role-user'}">
                         <div class="layim-chat-userinfo">
-                          <img src="${uuid ? `${$human.me.value}/me.png` : 'logo.png'}" alt="">
-                          <cite>${uuid ? `${$human.me.title}<i>${ymd}</i>` : `<i>${ymd}</i>我`}</cite>
+                          <img src="${uuid ? `${this.me.value}/me.png` : 'logo.png'}" alt="">
+                          <cite>${uuid ? `${this.me.title}<i>${ymd}</i>` : `<i>${ymd}</i>我`}</cite>
                         </div>
                         <div id="CHAT-${uuid || Date.now()}" class="layim-chat-text layui-text">${text}</div>
                       </li>
@@ -195,33 +203,39 @@ layui.define(['assert'], function (exports) {
             const dom = document.querySelector('.layim-chat-main');
             dom.scrollTop = dom.scrollHeight;
         },
+        sse: {
+            abort: null,
+            close: function () {
+                if (this.abort) {
+                    this.abort.abort();
+                }
+            }
+        },
         //说话
         send: function (text, callback) {
             layui.assert.limit('chat');
-            $human.response.messages = [];
-            $human.request.messages.push({role: 'user', content: text});
-            console.log($human.request);
-            $human.sse.abort = new AbortController();
+            this.response.messages = [];
+            this.request.messages.push({role: 'user', content: text});
+            console.log(this.request);
+            this.sse.abort = new AbortController();
             let thinking = false;
             const loading = layui.layer.load(2);
             SSE.fetchEventSource('chat/completions', {
-                method: 'POST', signal: $human.sse.abort.signal,
+                method: 'POST', signal: this.sse.abort.signal,
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify($human.request),
-                onopen: function (response) {
+                body: JSON.stringify(this.request),
+                onopen: (response) => {
                     layui.layer.close(loading);
                     console.log(response);
-                    if (!response.ok) {
-                        throw new Error(response.status + '-' + response.statusText);
-                    }
+                    if (!response.ok) throw new Error(response.status + '-' + response.statusText);
                 },
-                onmessage: function (msg) {
+                onmessage: (msg) => {
                     console.log(msg);
                     if (msg.data === '[DONE]') {
-                        if (layui.$.trim($human.response.messages.join(''))) {
-                            $human.request.messages.push({
+                        if (layui.$.trim(this.response.messages.join(''))) {
+                            this.request.messages.push({
                                 role: 'assistant',
-                                content: $human.response.messages.join('')
+                                content: this.response.messages.join('')
                             });
                         }
                     }
@@ -234,7 +248,7 @@ layui.define(['assert'], function (exports) {
                             if (layui.$.trim(reasoningContent)) {
                                 if (thinking === false) {
                                     thinking = true;
-                                    $human.think = Date.now();
+                                    this.think = Date.now();
                                     text.push('<think>');
                                 }
                                 text.push(reasoningContent);
@@ -242,50 +256,40 @@ layui.define(['assert'], function (exports) {
                             if (layui.$.trim(content)) {
                                 if (thinking === true) {
                                     thinking = false;
-                                    $human.think = Date.now() - $human.think;
+                                    this.think = Date.now() - this.think;
                                     text.push('</think>');
                                 }
                                 text.push(content);
-                                $human.response.messages.push(content);
+                                this.response.messages.push(content);
                             }
                             typeof callback === 'function' && callback(false, text.join(''));
                         }
                     }
                 },
-                onclose: function () {
+                onclose: () => {
                     layui.layer.close(loading);
                     console.log('SSE关闭！');
                     typeof callback === 'function' && callback(true, null);
                 },
-                onerror: function (error) {
+                onerror: (error) => {
                     layui.layer.close(loading);
                     console.log('SSE异常！', error);
-                    $human.request.messages.pop();
+                    this.request.messages.pop();
                     layui.layer.msg(`发送数据失败！（${error}）`);
                     typeof callback === 'function' && callback(true, null);
                     throw error;
                 }
             });
         },
-        sse: {
-            abort: null,
-            close: function () {
-                if ($human.sse.abort) {
-                    $human.sse.abort.abort();
-                }
-            }
-        },
         models: function (callback) {
-            layui.$.get('chat/models', function (data) {
-                $human.model = data;
-                $human.request.model = data[0].value;
+            layui.$.get('chat/models', (data) => {
+                this.model = data;
+                this.request.model = data[0].value;
                 typeof callback === 'function' && callback();
-            }).fail(function (xhr, status, error) {
+            }).fail((xhr, status, error) => {
                 layui.layer.msg(`模型请求异常，请重试！（${error || status}）`);
             });
         }
-    };
-
-    exports('human', $human);
+    });
 });
 

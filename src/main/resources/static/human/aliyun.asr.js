@@ -1,30 +1,30 @@
 layui.define(['assert'], function (exports) {
-    const $asr = {
+    exports('asr', {
         ws: null,
         task_id: null,
         app_key: '',
         open: function (callback) {
             layui.assert.limit('asr');
             const loading = layui.layer.load(2);
-            layui.$.get('aliyun/credentials', function (data) {
+            layui.$.get('aliyun/credentials', (data) => {
                 console.log(data);
-                $asr.ws = new WebSocket(`wss://nls-gateway.cn-shanghai.aliyuncs.com/ws/v1?token=${data}`);
-                $asr.ws.onopen = function () {
+                this.ws = new WebSocket(`wss://nls-gateway.cn-shanghai.aliyuncs.com/ws/v1?token=${data}`);
+                this.ws.onopen = () => {
                     layui.layer.close(loading);
-                    $asr.task_id = $asr.uuid();
-                    $asr.start();
+                    this.task_id = this.uuid();
+                    this.start();
                 };
-                $asr.ws.onclose = function () {
+                this.ws.onclose = () => {
                     layui.layer.close(loading);
                     console.log('WebSocket关闭！！！');
-                    $asr.ws = null;
+                    this.ws = null;
                 };
-                $asr.ws.onerror = function () {
+                this.ws.onerror = () => {
                     layui.layer.close(loading);
                     layui.layer.msg('语音识别失败！！！（WebSocket）');
-                    $asr.ws = null;
+                    this.ws = null;
                 };
-                $asr.ws.onmessage = function (e) {
+                this.ws.onmessage = (e) => {
                     console.log(e.data);
                     const data = JSON.parse(e.data);
                     if (data.header.name === "TranscriptionStarted" && data.header.status === 20000000) {
@@ -39,22 +39,22 @@ layui.define(['assert'], function (exports) {
                         typeof callback === 'function' && callback(true, data.payload.result);
                     }
                     if (data.header.name === 'TranscriptionCompleted' && data.header.status === 20000000) {
-                        $asr.ws.close();
+                        this.ws.close();
                     }
                     if (data.header.status !== 20000000) {
-                        $asr.ws.close();
+                        this.ws.close();
                         console.log('语音识别失败:', data);
                         //layui.layer.msg(`语音识别失败！（${data.header.status}:${data.header.status_text}）`);
                     }
                 };
-            }).fail(function (xhr, status, error) {
+            }).fail((xhr, status, error) => {
                 layui.layer.close(loading);
                 layui.layer.msg(`语音识别请求异常，请重试！（${error || status}）`);
             });
         },
         close: function () {
-            if ($asr.ws) {
-                $asr.ws.close();
+            if (this.ws) {
+                this.ws.close();
             }
         },
         uuid: function () {
@@ -64,17 +64,17 @@ layui.define(['assert'], function (exports) {
         },
         header: function (name) {
             return {
-                message_id: $asr.uuid(),
-                task_id: $asr.task_id,
+                message_id: this.uuid(),
+                task_id: this.task_id,
                 namespace: 'SpeechTranscriber',
                 name: name,
-                appkey: $asr.app_key
+                appkey: this.app_key
             };
         },
         start: function () {
-            if ($asr.ws) {
-                $asr.ws.send(JSON.stringify({
-                    header: $asr.header('StartTranscription'),
+            if (this.ws) {
+                this.ws.send(JSON.stringify({
+                    header: this.header('StartTranscription'),
                     payload: {
                         format: 'PCM',
                         sample_rate: 16000,
@@ -86,25 +86,25 @@ layui.define(['assert'], function (exports) {
             }
         },
         stop: function () {
-            if ($asr.ws) {
-                $asr.ws.send(JSON.stringify({header: $asr.header('StopTranscription')}));
+            if (this.ws) {
+                this.ws.send(JSON.stringify({header: this.header('StopTranscription')}));
             }
         },
         send: function (buffer) {
-            if ($asr.ws) {
-                $asr.ws.send(buffer);
+            if (this.ws) {
+                this.ws.send(buffer);
             }
         },
         asr: function (blob, callback) {
             layui.assert.limit('asr');
             const loading = layui.layer.load(2);
             const fileReader = new FileReader();
-            fileReader.onload = function (e) {
+            fileReader.onload = (e) => {
                 console.log(e.target.result);
                 layui.$.post(`aliyun/speech/recognitions`, {
-                    appKey: $asr.app_key,
+                    appKey: this.app_key,
                     vop: encodeURIComponent(e.target.result.split(',')[1])
-                }, function (data) {
+                }, (data) => {
                     console.log(data);
                     if (data.status !== 20000000) {
                         layui.layer.msg(`语音识别失败！（${data.status}:${data.message}）`);
@@ -112,17 +112,16 @@ layui.define(['assert'], function (exports) {
                         typeof callback === 'function' && callback(data.result);
                     }
                     layui.layer.close(loading);
-                }).fail(function (xhr, status, error) {
+                }).fail((xhr, status, error) => {
                     layui.layer.close(loading);
                     layui.layer.msg(`语音识别请求异常，请重试！（${error || status}）`);
                 });
             };
-            fileReader.onerror = function () {
+            fileReader.onerror = () => {
                 layui.layer.close(loading);
                 layui.layer.msg(`读取录音文件失败！（${fileReader.error}）`);
             };
             fileReader.readAsDataURL(blob);
         }
-    };
-    exports('asr', $asr);
+    });
 });

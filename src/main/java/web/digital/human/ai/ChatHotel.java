@@ -8,16 +8,13 @@ import java.util.List;
 public record ChatHotel(
         String name, String address, String type,
         String price, Point point, List<Room> rooms) {
+
     public ChatHotel price(String price) {
-        return new ChatHotel(
-                name, address, type,
-                price, point, rooms);
+        return new ChatHotel(name, address, type, price, point, rooms);
     }
 
     public ChatHotel rooms(List<Room> rooms) {
-        return new ChatHotel(
-                name, address, type,
-                price, point, rooms);
+        return new ChatHotel(name, address, type, price, point, rooms);
     }
 
     public record Point(String lng, String lat) {
@@ -29,8 +26,6 @@ public record ChatHotel(
         }
     }
 
-    public record CheckIN(
-            String guestName, String dateTime,
-            String roomName, String roomPrice) {
+    public record CheckIN(String guestName, String dateTime, String roomName, String roomPrice) {
     }
 }
