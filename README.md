@@ -130,9 +130,13 @@ human: [
 
 ### 语音唤醒
 
-- [wakeup.html](src/main/resources/static/wakeup.html)
+> 一个使用《Web Speech API》通过语音唤醒数字人的例子（[wakeup.html](src/main/resources/static/wakeup.html)）。
 
-> 一个简单语音唤醒数字人的例子
+#### 兼容性功能测试
+
+- [x] Edge on Windows
+- [x] Safari on iOS
+- [ ] Android
 
 ## 项目捐赠
 
