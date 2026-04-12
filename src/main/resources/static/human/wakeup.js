@@ -121,6 +121,7 @@ layui.define(function (exports) {
         },
         _getVoices: function (callback) {
             window.speechSynthesis.getVoices().forEach(voice => {
+                console.log('语音：', voice)
                 if (voice.localService && voice.lang === this.lang) {
                     if (!this.voices.some(value => value.name === voice.name)) {
                         this.voices.push(voice);
@@ -128,15 +129,13 @@ layui.define(function (exports) {
                 }
             });
             const sound = this.voices.map(voice => ({title: voice.name, value: voice.name}));
-            typeof callback === 'function' && callback(sound);
+            if (sound.length > 0) typeof callback === 'function' && callback(sound);
         },
         getVoices: function (callback) {
-            if (window.speechSynthesis) return;
-            if (window.speechSynthesis.getVoices().length === 0) {
-                window.speechSynthesis.onvoiceschanged = () => {
-                    this._getVoices(callback);
-                }
-            } else {
+            if (typeof speechSynthesis === 'undefined'
+                && speechSynthesis.onvoiceschanged === undefined) return;
+            this._getVoices(callback);
+            window.speechSynthesis.onvoiceschanged = () => {
                 this._getVoices(callback);
             }
         }
