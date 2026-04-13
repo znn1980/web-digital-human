@@ -10,14 +10,15 @@ layui.define(function (exports) {
         reg: /[。！？：；.!?:;\n]/,
         speaks: [],
         listen: function (keywords, timeout, callback) {
-            if (!window.speechSynthesis) alert('当前浏览器不支持语音合成！');
+            if (!window.speechSynthesis) layui.layer.msg('当前浏览器不支持语音合成！');
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) return alert('当前浏览器不支持语音识别！');
+            if (!SpeechRecognition) return layui.layer.msg('当前浏览器不支持语音识别！');
             this.recognition = new SpeechRecognition();
             this.recognition.continuous = true;
             this.recognition.interimResults = false;
             this.recognition.maxAlternatives = 1;
             this.recognition.lang = this.lang;
+            let loading;
             this.recognition.onresult = (e) => {
                 const result = e.results[e.results.length - 1][0].transcript.trim();
                 console.log('语音识别：', result);
@@ -27,7 +28,7 @@ layui.define(function (exports) {
                 //keywords.every(keyword => result.includes(keyword))
                 if (!this.listening && keywords.every(keyword => result.includes(keyword))) {//唤醒词
                     this.listening = true;
-                    layui.layer.load(2, {
+                    loading = layui.layer.load(2, {
                         time: timeout, shade: 0.6, shadeClose: true
                         , content: '<span style="font-weight:bold;color:white;' +
                             'position:absolute;left:-30px;width:150px;">我在听...</span>'
@@ -37,7 +38,7 @@ layui.define(function (exports) {
                         }
                     });
                 } else if (this.listening) {
-                    layui.layer.closeLast('loading', () => {
+                    layui.layer.close(loading, () => {
                         this.listening = true;
                         typeof callback === 'function' && callback(result);
                     });
@@ -82,14 +83,13 @@ layui.define(function (exports) {
             this.speaking = true;
             this.listening = false;
             this.recognition && this.recognition.stop();
-            const text = this.speaks.shift();
             const utterance = new SpeechSynthesisUtterance();
-            utterance.text = text;
-            utterance.lang = this.recognition && this.recognition.lang;
+            utterance.text = this.speaks.shift();
+            utterance.lang = this.lang;
             if (this.voice) utterance.voice = this.voice;
             utterance.onstart = () => {
                 console.log('~~~开始语音合成~~~');
-                console.log('语音合成：', text, this.speaks.length);
+                console.log('语音合成：', utterance.text, this.speaks.length);
                 callback && typeof callback.play === 'function' && callback.play();
             }
             utterance.onend = () => {
